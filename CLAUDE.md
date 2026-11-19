@@ -88,8 +88,8 @@ player_mad, blocked, sinequipo.
    VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY (y PUBLISHABLE_KEY si aplica) del STAGING y
    VITE_ENABLE_QA_LOGIN=true. Luego: `update targets set base_url=...` y `gh secret set TARGET_BASE_URL`.
 4. ~~GITHUB_TOKEN + probar POST /api/runs~~ HECHO 19-nov: token fine-grained con Actions
-   read/write en qa-playwright y qa-selenium (añadir cada qa-* nuevo al token o el dispatch da
-   403 "Resource not accessible by personal access token"). Circuito API -> GitHub -> Supabase
+   read/write en todos los qa-* (si se crea un repo nuevo hay que añadirlo al token o el
+   dispatch da 403 "Resource not accessible by personal access token"). Circuito API -> GitHub -> Supabase
    verificado: 201, run finished con github_run_url, summary, test_results y run_events.
 5. Tests reales de Playwright: suites A (auth/RBAC) y B (eventos) contra el demo; el reporter ya
    existe. Después Selenium (misma suite A para comparar), Cucumber (C y E en Given/When/Then),
