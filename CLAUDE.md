@@ -1,0 +1,107 @@
+@AGENTS.md
+
+# Ivan QA Lab: contexto del proyecto
+
+## Objetivo
+Web pública de portfolio (https://ivan-qa-lab.vercel.app, Vercel gratis) donde el visitante elige una
+herramienta de automatización, elige sobre qué probar, lanza la ejecución, la ve en vivo y consulta
+resultados con métricas. Usuario de GitHub: Sahueson. Idioma de trabajo: español.
+
+## Arquitectura (decisión clave)
+Vercel NO ejecuta tests (serverless). La web solo orquesta y muestra:
+1. Web (Next.js 16 + Tailwind) -> POST /api/runs -> valida, rate limit, crea fila en `runs` (Supabase).
+2. La API dispara `workflow_dispatch` en el repo de la herramienta (inputs: run_id, suite).
+3. GitHub Actions ejecuta los tests y los reporters envían eventos/resultados a Supabase.
+4. La web escucha con Supabase Realtime y pinta el progreso; al final, métricas.
+Solo una ejecución a la vez (el staging es compartido). Lista cerrada de targets/suites: nunca
+aceptar URLs ni comandos del usuario.
+
+## Estructura local (~/Genexys/app-ivan/ivan-qa-lab/), un repo por herramienta
+ivan-qa-lab-web, ivan-qa-lab-shared, qa-playwright, qa-selenium, qa-cucumber, qa-karate,
+qa-newman, qa-bruno, qa-appium (todos creados en GitHub bajo Sahueson; solo web, shared y
+playwright tienen contenido real; selenium/cucumber/newman/bruno solo `npm init` + dependencias).
+App a probar: Airsoft-Tactical-Calendar (~/Genexys/app-ivan/Airsoft-Tactical-Calendar, Vite + React + Zustand).
+
+## Proyectos Supabase (cuenta Gmail nueva, plan gratis, límite 2)
+- ivan-qa-lab (ref exukogfrnsivvibcqejl): datos de esta web.
+  Tablas: tools, targets, suites, runs, run_events, test_results, run_summary (lectura pública por
+  RLS) + run_requests (ip_hash, SIN acceso público: solo service key). Realtime activo, bucket
+  `evidence`. Índice único `one_active_run` (un solo run en queued|running). Función
+  `expire_stale_runs()` (queued >5 min / running >15 min -> timeout; la llama la API).
+  Migraciones en supabase/migrations/ (init + hardening). Seed: tool playwright
+  (repo Sahueson/qa-playwright), target tactical-calendar, suites a-auth y b-eventos.
+  Ojo: un `revoke select (col)` NO oculta una columna en Supabase (anon tiene GRANT de tabla);
+  lo privado va en tabla aparte sin políticas.
+- tactical-calendar-staging (ref rpxdxitntsmgcbbnuyox): destino de los tests. Esquema copiado de
+  PROD (10 tablas, 35 políticas, idéntico), buckets event-images y team-documents con 7 políticas.
+- PROD de la app (ref eczgrfvmeksvqjrphkwg): SOLO LECTURA. Nunca escribir ni ejecutar tests contra él.
+  El DEV está desfasado, no usarlo como fuente.
+
+## Hecho y validado
+- shared: schema/result.schema.json, schema/example.json, send-to-supabase.js
+  (start | event | finish | fail). start guarda github_run_url; finish es repetible (borra y
+  reinserta test_results, upsert de run_summary) y con 0 tests marca failed; los PATCH solo tocan
+  runs activos (no reabren un run cerrado por timeout).
+- web: lib/supabase/{browser,admin}.ts, lib/github/dispatch.ts, app/api/runs/route.ts en la RAÍZ
+  (no en src/: con app/ en la raíz Next ignora src/app, y `@/*` apunta a `./*`).
+  POST /api/runs {tool, suite} (slugs) -> 201 {run_id} | 400 | 404 | 409 ocupado/no en vivo |
+  429 (3/h por IP, 50/día global) | 502 dispatch rechazado (run -> failed).
+- qa-playwright: reporter propio (reporters/qa-lab-reporter.ts -> result.json normalizado), solo
+  proyecto chromium, workers 1 en serie (staging compartido), tsconfig node16, smoke test
+  tests/a-auth/smoke.spec.ts. El reporter guarda solo el intento final de cada test (con
+  retries un flaky cuenta passed) y quita los códigos ANSI de los errores. Workflow
+  .github/workflows/run-tests.yml con container mcr.microsoft.com/playwright:v1.65.1-noble
+  (37 s), con paso final `fail` (if: failure() || cancelled()). Secretos del repo: SUPABASE_URL,
+  SUPABASE_SERVICE_KEY, TARGET_BASE_URL.
+  Circuito completo probado a mano con `gh workflow run`: runs -> test_results -> run_summary OK.
+- staging: esquema, buckets y políticas aplicados. reset-staging/ en shared contiene schema-prod.sql,
+  storage.sql, users.json y create-users.js.
+
+## La app Tactical Calendar (para escribir tests y seed)
+- Roles: profiles.app_role = player | admin | super_admin; equipos en profiles.squads
+  ("MAD Irregulars", "FOE"); Junta en foe_subroles (junta_operativa, junta_directiva);
+  is_blocked bloquea. La pestaña FOE solo se ve con "FOE" en squads o siendo super admin.
+- Login QA por email+contraseña, visible si VITE_ENABLE_QA_LOGIN=true (solo en el demo, nunca en PROD).
+- Tablas: events, event_registrations, player_leaves, team_blackouts, team_documents,
+  foe_infractions, foe_polls, foe_poll_votes, profiles, keep_alive.
+- No hay trigger en auth.users: el perfil lo crea la app. protect_profile_sensitive_fields deja
+  pasar si auth.uid() es null (el seed con conexión directa puede fijar roles).
+- Los eventos de PROD están vacíos: el seed debe crearlos (uno MAD, uno FOE, uno global, y una
+  votación de la Junta Directiva) para poder probar que un MAD no ve nada de FOE.
+- Regla de las 48 h: SÍ está implementada (el resumen de funcionalidades está desfasado).
+  `removeRegistration` (src/store/use-calendar-store.js) la bloquea con un toast "Faltan menos de
+  48 horas..." usando getEventLockStatus (src/lib/calendar-utils.js); no deshabilita el botón,
+  así que TC-C02 debe comprobar el toast y que la inscripción sigue en BD. Lo que está en roadmap
+  son las multas de 5 € por reincidencia. Falta además un test para 3 graves -> Muy Grave (TC-E05).
+
+## 8 usuarios QA (users.json, contraseña común en QA_PASSWORD, emails qa.*@example.com)
+superadmin, admin_mad, admin_foe, junta2 (2º miembro para cuórum/recusación), player_foe,
+player_mad, blocked, sinequipo.
+
+## Pendiente, en este orden
+1. Ejecutar `node reset-staging/create-users.js` (necesita STG_URL, STG_SECRET_KEY, QA_PASSWORD
+   exportados: `set -a; source ~/.qa-lab.env; set +a`). Esperado: 8 líneas OK.
+2. Leer restricciones CHECK de PROD (solo lectura): `psql "$PROD_DB" -c "select conrelid::regclass,
+   conname, pg_get_constraintdef(oid) from pg_constraint where connamespace='public'::regnamespace
+   and contype='c';"` y escribir seed.sql + reset.js idempotentes (vacía datos de prueba y recarga).
+3. Desplegar `tactical-calendar-demo` en Vercel (mismo repo Airsoft-Tactical-Calendar) con
+   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY (y PUBLISHABLE_KEY si aplica) del STAGING y
+   VITE_ENABLE_QA_LOGIN=true. Luego: `update targets set base_url=...` y `gh secret set TARGET_BASE_URL`.
+4. Crear GITHUB_TOKEN fine-grained (Actions: read/write sobre los qa-*), ponerlo en
+   ivan-qa-lab-web/.env.local y probar POST /api/runs con curl (esperado 201).
+5. Tests reales de Playwright: suites A (auth/RBAC) y B (eventos) contra el demo; el reporter ya
+   existe. Después Selenium (misma suite A para comparar), Cucumber (C y E en Given/When/Then),
+   Newman/Bruno/Karate (suite D y comprobación de RLS por API), Appium al final (resultados pregrabados).
+6. Solo cuando las herramientas funcionen: la web (home, página de herramienta con selector y botón
+   Lanzar, pantalla en vivo con Realtime, resultados con métricas), Turnstile, ping keep-alive
+   a ambos proyectos Supabase (se pausan a los 7 días sin actividad).
+
+## Reglas de trabajo
+- Una herramienta cada vez; primero funciona en local con result.json normalizado, luego workflow, luego web.
+- Nunca imprimir ni commitear claves. Secretos en ~/.qa-lab.env (fuera de los repos, chmod 600) y
+  en GitHub Secrets / variables de Vercel. SUPABASE_SERVICE_KEY solo en servidor, nunca NEXT_PUBLIC_.
+- Antes de cualquier comando que escriba en una base de datos, comprobar que el ref es el del staging.
+- Contraseñas de base de datos sin símbolos (# % & @ / :) para que no rompan las cadenas de conexión.
+- Formato de resultados común (shared/schema): tool, target, suite, started_at, finished_at,
+  duration_ms, summary{total,passed,failed,skipped}, tests[{name,status,duration_ms,role,error,evidence_url}].
+- Pegar heredocs largos en el terminal corrompe archivos: mejor que Claude Code los escriba directamente.
