@@ -79,8 +79,9 @@ superadmin, admin_mad, admin_foe, junta2 (2º miembro para cuórum/recusación),
 player_mad, blocked, sinequipo.
 
 ## Pendiente, en este orden
-1. Ejecutar `node reset-staging/create-users.js` (necesita STG_URL, STG_SECRET_KEY, QA_PASSWORD
-   exportados: `set -a; source ~/.qa-lab.env; set +a`). Esperado: 8 líneas OK.
+1. ~~Crear usuarios QA~~ HECHO 19-nov: `node reset-staging/create-users.js` (con
+   `set -a; source ~/.qa-lab.env; set +a`) -> 8 OK; perfiles con roles/squads/subroles correctos
+   y login por contraseña 200 en staging. Es idempotente: re-ejecutarlo resetea contraseña y perfil.
 2. Leer restricciones CHECK de PROD (solo lectura): `psql "$PROD_DB" -c "select conrelid::regclass,
    conname, pg_get_constraintdef(oid) from pg_constraint where connamespace='public'::regnamespace
    and contype='c';"` y escribir seed.sql + reset.js idempotentes (vacía datos de prueba y recarga).
