@@ -69,8 +69,8 @@ App a probar: Airsoft-Tactical-Calendar (~/Genexys/app-ivan/Airsoft-Tactical-Cal
 - Los eventos de PROD están vacíos: el seed los crea (reset-staging/reset.js).
 - NO existe evento "global": la política SELECT de events solo deja ver squad ∈ squads del usuario
   (o super admin). Con squad='' solo lo vería el super admin; la app siempre asigna MAD o FOE.
-- La lógica de negocio (escalado de faltas, cierre por cuórum, recusación, ponderación) NO tiene
-  triggers en BD: vive en el front (src/store/use-calendar-store.js). Solo hay CHECKs de enums:
+- Desde cbf909b el cierre de votaciones, las faltas y el escalado van en la BD (close_foe_poll);
+  la ponderación MilSim y el % de asistencia se siguen calculando en el front (RosterView). Solo hay CHECKs de enums:
   events.event_type normal|milsim; foe_polls.board junta_operativa|junta_directiva, status
   open|closed; foe_infractions.severity apercibimiento|leve|grave|muy_grave, status
   active|resolved; player_leaves.status pending|approved|rejected; team_documents.category
@@ -113,8 +113,19 @@ player_mad, blocked, sinequipo.
    read/write en todos los qa-* (si se crea un repo nuevo hay que añadirlo al token o el
    dispatch da 403 "Resource not accessible by personal access token"). Circuito API -> GitHub -> Supabase
    verificado: 201, run finished con github_run_url, summary, test_results y run_events.
-5. ~~Playwright~~ HECHO 19-nov, verde en local (19/19 x5) y en CI vía API (a-auth 13/13, b-eventos
-   6/6): tests/a-auth/{auth,rbac}.spec.ts, tests/b-eventos/eventos.spec.ts, fixtures/qa.ts
+5. ~~Playwright~~ HECHO 19-nov: 6 suites, 43 tests, verdes en local (x3) y en CI vía API
+   (a-auth 13, b-eventos 6, c-inscripciones 7, d-asistencia 4, e-gobernanza 8, f-excedencias 5;
+   todas registradas en `suites` del lab y en supabase/seed.sql). Cada suite B-F hace
+   resetStaging() en beforeAll (parte del seed; no depende del orden). Esperas:
+   app.waitForQuietNetwork() (cuenta peticiones en vuelo) — NO usar waitForLoadState
+   ("networkidle"): en una SPA solo ocurre una vez por navegación y luego no espera nada.
+   El seed (shared reset.js) tiene datos específicos por suite: partidas C (inscripción abierta
+   con uniforme Tiger Stripe, cancelada, pasada abierta, MAD en excedencia), D (MilSim pasada;
+   asistencia exacta player_foe 29 % 1/3,5, junta2 60 % 1,5/2,5 con excedencia), E (5
+   expedientes a falta del voto de junta2 + faltas previas para escalados), F (solicitudes
+   pendientes de player_foe y de admin_foe). Junta Directiva = superadmin, admin_foe, junta2.
+   El aviso "No tienes «X» marcada" solo sale si la ficha tiene alguna equipación marcada.
+   Detalle de la base: tests/a-auth/{auth,rbac}.spec.ts, tests/b-eventos/eventos.spec.ts, fixtures/qa.ts
    (loginAs con users.json de shared + espera de 1,5 s sin peticiones), pages/app-page.ts,
    global-setup.ts (reserva el staging -> reset -> teardown libera). retries 0 (los tests mutan
    el staging). CI sube como artefacto solo capturas .png de fallos (las trazas llevan la
@@ -133,9 +144,16 @@ player_mad, blocked, sinequipo.
    Bugs de la app encontrados (pasados al agente del calendario):
    (a) RLS "Lectura de perfiles por unidad": el bloqueado no podía leer su propio perfil ->
        "Pendiente de asignación" en vez de "Acceso denegado". CORREGIDO en staging (¿PROD?).
-   (b) Doble loadCloudData tras el login (syncUserSession desde initAuth y onAuthStateChange):
-       la 2ª carga pisa en pantalla un cambio guardado entre medias (en BD sí está). PENDIENTE;
-       el workaround de 1,5 s en fixtures/qa.ts se puede quitar cuando se arregle.
+   (b) Doble loadCloudData tras el login: la 2ª carga pisaba un cambio guardado. CORREGIDO
+       (cbf909b); workaround retirado.
+   (c) EventDetailModal: al abrirse lanza loadCloudData y el efecto que inicializa el borrador
+       de asistencia depende de `registrations` -> si el admin marca casillas antes de que
+       termine la recarga, se borran sin avisar, se guarda attended=false con toast de éxito y
+       la partida queda BLOQUEADA con la asistencia mal. PENDIENTE (agente del calendario);
+       openEvent espera a esa recarga.
+   Desde cbf909b la lógica FOE vive en la BD: close_foe_poll (recuento, sanción y escalado),
+   request/approve/cancel_event_unlock, votos anónimos solo legibles por su autor, bucket
+   team-documents privado; FOE: solo la Junta Operativa crea partidas.
    EVIDENCIAS (19-nov): fixtures/qa.ts hace una captura JPEG (calidad 60, ~30-60 KB, <1 MB por
    ejecución) al final de cada test; el reporter la sube con shared uploadEvidence al bucket
    público `evidence` (runs/<run_id>/<slug-del-test>.jpg) y rellena test_results.evidence_url;
