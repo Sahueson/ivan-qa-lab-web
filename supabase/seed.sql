@@ -13,6 +13,8 @@ from tools t, targets g,
     ('a-auth', 'Autenticación y perfiles', 'Login, bloqueo de usuarios y ficha de operador', 60),
     ('b-eventos', 'Ciclo de vida de eventos', 'Creación, cancelación y bloqueo de acta', 90),
     ('c-inscripciones', 'Inscripciones y reglas', 'Equipación preseleccionada, regla de 48 h, excedencias, partidas cerradas', 60),
-    ('e-gobernanza', 'Gobernanza FOE', 'Expedientes, recusación, cierre por cuórum y escalado de faltas', 60)
+    ('d-asistencia', 'Motor de asistencia', '% anual, ponderación MilSim, descuento por excedencia y cierre de acta', 60),
+    ('e-gobernanza', 'Gobernanza FOE', 'Expedientes, recusación, cierre por cuórum y escalado de faltas', 60),
+    ('f-excedencias', 'Excedencias FOE', 'Solicitud, duración mínima, concesión por la Junta y nadie se concede la suya', 60)
   ) as s(slug, name, description, secs)
 where t.slug = 'playwright' and g.slug = 'tactical-calendar';
