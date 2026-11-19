@@ -11,6 +11,7 @@ select t.id, g.id, s.slug, s.name, s.description, s.secs
 from tools t, targets g,
   (values
     ('a-auth', 'Autenticación y perfiles', 'Login, bloqueo de usuarios y ficha de operador', 60),
-    ('b-eventos', 'Ciclo de vida de eventos', 'Creación, cancelación y bloqueo de acta', 90)
+    ('b-eventos', 'Ciclo de vida de eventos', 'Creación, cancelación y bloqueo de acta', 90),
+    ('c-inscripciones', 'Inscripciones y reglas', 'Equipación preseleccionada, regla de 48 h, excedencias, partidas cerradas', 60)
   ) as s(slug, name, description, secs)
 where t.slug = 'playwright' and g.slug = 'tactical-calendar';
