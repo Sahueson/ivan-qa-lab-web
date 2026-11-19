@@ -54,8 +54,8 @@ App a probar: Airsoft-Tactical-Calendar (~/Genexys/app-ivan/Airsoft-Tactical-Cal
   (37 s), con paso final `fail` (if: failure() || cancelled()). Secretos del repo: SUPABASE_URL,
   SUPABASE_SERVICE_KEY, TARGET_BASE_URL.
   Circuito completo probado a mano con `gh workflow run`: runs -> test_results -> run_summary OK.
-- staging: esquema, buckets y políticas aplicados. reset-staging/ en shared contiene schema-prod.sql,
-  storage.sql, users.json y create-users.js.
+- staging: esquema, buckets y políticas aplicados. reset-staging/ en shared: create-users.js,
+  users.json y storage.sql (subidos) + schema*.sql (solo local, gitignored).
 
 ## La app Tactical Calendar (para escribir tests y seed)
 - Roles: profiles.app_role = player | admin | super_admin; equipos en profiles.squads
@@ -99,6 +99,10 @@ player_mad, blocked, sinequipo.
    a ambos proyectos Supabase (se pausan a los 7 días sin actividad).
 
 ## Reglas de trabajo
+- A GitHub (repos públicos) solo se sube lo necesario para que funcione. Nada sensible: ni claves,
+  ni contraseñas, ni volcados de esquema/datos de PROD o staging (reset-staging/schema*.sql están
+  en .gitignore y se quedan en local).
+- Commits con ivancabanillas93@gmail.com (git config local de cada repo; el global es el de Génexys).
 - Una herramienta cada vez; primero funciona en local con result.json normalizado, luego workflow, luego web.
 - Nunca imprimir ni commitear claves. Secretos en ~/.qa-lab.env (incluye LAB_*/STG_* keys,
   BASE_URL y QA_* de usuarios; ya no hay .env en la raíz de ivan-qa-lab/) (fuera de los repos, chmod 600) y
