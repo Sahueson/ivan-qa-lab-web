@@ -136,6 +136,12 @@ player_mad, blocked, sinequipo.
    (b) Doble loadCloudData tras el login (syncUserSession desde initAuth y onAuthStateChange):
        la 2ª carga pisa en pantalla un cambio guardado entre medias (en BD sí está). PENDIENTE;
        el workaround de 1,5 s en fixtures/qa.ts se puede quitar cuando se arregle.
+   EVIDENCIAS (19-nov): fixtures/qa.ts hace una captura JPEG (calidad 60, ~30-60 KB, <1 MB por
+   ejecución) al final de cada test; el reporter la sube con shared uploadEvidence al bucket
+   público `evidence` (runs/<run_id>/<slug-del-test>.jpg) y rellena test_results.evidence_url;
+   enmascara QA_PASSWORD en errores; pruneEvidence() borra al final las de runs con >14 días.
+   NUNCA se publican trazas, vídeos ni logs (llevan contraseña y tokens). Solo sube en CI (con
+   RUN_ID); en local no. Verificado en CI: 6/6 con 6 URLs 200.
    Para pruebas repetidas desde la API: el límite 3/h por IP muerde; en desarrollo se libera
    borrando run_requests propias (BD del lab, service key).
    Después Selenium (misma suite A para comparar), Cucumber (C y E en Given/When/Then),
