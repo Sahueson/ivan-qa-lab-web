@@ -98,9 +98,17 @@ player_mad, blocked, sinequipo.
    Salvaguardas: solo URL del staging y aborta si hay perfiles no-QA. Verificado por RLS con login
    real: superadmin 5 eventos/1 votación; admin_foe 4/1; player_foe 4/0; admin_mad y player_mad
    1/0; blocked y sinequipo 0/0. Pendiente: no limpia ficheros de Storage (solo filas).
-3. Desplegar `tactical-calendar-demo` en Vercel (mismo repo Airsoft-Tactical-Calendar) con
-   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY (y PUBLISHABLE_KEY si aplica) del STAGING y
-   VITE_ENABLE_QA_LOGIN=true. Luego: `update targets set base_url=...` y `gh secret set TARGET_BASE_URL`.
+3. ~~Demo en Vercel~~ HECHO 19-nov: proyecto Vercel `tactical-calendar-demo` (2º proyecto del repo
+   Airsoft-Tactical-Calendar, rama main) -> https://tactical-calendar-demo.vercel.app, con
+   VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY del STAGING y VITE_ENABLE_QA_LOGIN=true. Verificado:
+   el bundle lleva el ref del staging y su anon key (no la secret); login QA por data-testid
+   (qa-email-input, qa-password-input, qa-login-btn); player_mad ve 1 partida, player_foe 4.
+   Su cron /api/keep-alive (cada 3 días) mantiene vivo el staging. targets.base_url y el secret
+   TARGET_BASE_URL de qa-playwright apuntan al demo; run por la API -> finished 1/1.
+   OJO: https://airsoft-tactical-calendar.vercel.app es PROD (ref eczgrfvmeksvqjrphkwg) y
+   …-sahueson.vercel.app son previews con login de Vercel: NUNCA tests contra ellas, y no tocar
+   las variables de ese proyecto. Tras cambiar variables en Vercel hay que hacer Redeploy (Vite
+   las hornea en el build).
 4. ~~GITHUB_TOKEN + probar POST /api/runs~~ HECHO 19-nov: token fine-grained con Actions
    read/write en todos los qa-* (si se crea un repo nuevo hay que añadirlo al token o el
    dispatch da 403 "Resource not accessible by personal access token"). Circuito API -> GitHub -> Supabase
@@ -113,6 +121,8 @@ player_mad, blocked, sinequipo.
    a ambos proyectos Supabase (se pausan a los 7 días sin actividad).
 
 ## Reglas de trabajo
+- `gh` con el .env.local cargado usa su GITHUB_TOKEN (solo Actions) y da 403 en secrets: usar
+  `env -u GITHUB_TOKEN gh ...` para operar con la sesión del keyring.
 - A GitHub (repos públicos) solo se sube lo necesario para que funcione. Nada sensible: ni claves,
   ni contraseñas, ni volcados de esquema/datos de PROD o staging (reset-staging/schema*.sql están
   en .gitignore y se quedan en local).
