@@ -84,7 +84,19 @@ export async function POST(request: Request) {
       return json(429, { error: "Se ha alcanzado el límite diario de ejecuciones" }, { "Retry-After": "3600" });
     }
 
-    // 5. Crear el run. El índice one_active_run garantiza uno solo en cola/en curso.
+    // 5. El staging puede estar reservado por una ejecución que no viene de la web (local, otro
+    //    agente): mejor avisar ya que lanzar un workflow que se quedaría esperando.
+    const { data: lock, error: lockError } = await db
+      .from("staging_lock")
+      .select("holder, expires_at")
+      .eq("id", 1)
+      .maybeSingle<{ holder: string | null; expires_at: string | null }>();
+    if (lockError) throw lockError;
+    if (lock?.holder && lock.expires_at && new Date(lock.expires_at) > new Date()) {
+      return json(409, { error: "El entorno de pruebas está ocupado; inténtalo en unos minutos" }, { "Retry-After": "60" });
+    }
+
+    // 6. Crear el run. El índice one_active_run garantiza uno solo en cola/en curso.
     const { data: run, error: runError } = await db
       .from("runs")
       .insert({ suite_id: row.id })
@@ -100,7 +112,7 @@ export async function POST(request: Request) {
     const { error: reqError } = await db.from("run_requests").insert({ run_id: run.id, ip_hash: ipHash });
     if (reqError) throw reqError;
 
-    // 6. Disparar GitHub Actions. Si no lo acepta, el run se marca como fallido.
+    // 7. Disparar GitHub Actions. Si no lo acepta, el run se marca como fallido.
     try {
       await dispatchWorkflow({
         repo: row.tools.github_repo,
