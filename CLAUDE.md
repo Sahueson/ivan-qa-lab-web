@@ -113,8 +113,19 @@ player_mad, blocked, sinequipo.
    read/write en todos los qa-* (si se crea un repo nuevo hay que añadirlo al token o el
    dispatch da 403 "Resource not accessible by personal access token"). Circuito API -> GitHub -> Supabase
    verificado: 201, run finished con github_run_url, summary, test_results y run_events.
-5. Tests reales de Playwright: suites A (auth/RBAC) y B (eventos) contra el demo; el reporter ya
-   existe. Después Selenium (misma suite A para comparar), Cucumber (C y E en Given/When/Then),
+5. Playwright HECHO en local 19-nov (19 tests, 18 verdes + TC-A02 rojo por bug real):
+   tests/a-auth/{auth,rbac}.spec.ts y tests/b-eventos/eventos.spec.ts, fixtures/qa.ts (loginAs
+   con users.json de shared), pages/app-page.ts, global-setup.ts (reset del staging antes de
+   cada ejecución). Local: `ln -s ../ivan-qa-lab-shared shared` (ya creado, gitignored) y
+   `set -a; . ~/.qa-lab.env; set +a; BASE_URL=https://tactical-calendar-demo.vercel.app npx
+   playwright test` (el BASE_URL de ~/.qa-lab.env es la preview git-dev, NO el demo).
+   Con --reporter=list/dot NO corre qa-lab-reporter (result.json queda viejo).
+   Tests contra origin/main del calendario (lo que despliega el demo), nunca la copia local.
+   PENDIENTE: el usuario debe subir los secretos STG_URL, STG_SECRET_KEY y QA_PASSWORD a
+   qa-playwright (a Claude no le está permitido subir secretos) y luego validar en CI.
+   BUG pasado al agente del calendario (standby): RLS "Lectura de perfiles por unidad" impide al
+   bloqueado leer su propio perfil -> ve "Pendiente de asignación" sin nombre en vez de
+   "Acceso denegado" (también en PROD). Después Selenium (misma suite A para comparar), Cucumber (C y E en Given/When/Then),
    Newman/Bruno/Karate (suite D y comprobación de RLS por API), Appium al final (resultados pregrabados).
 6. Solo cuando las herramientas funcionen: la web (home, página de herramienta con selector y botón
    Lanzar, pantalla en vivo con Realtime, resultados con métricas), Turnstile, ping keep-alive
