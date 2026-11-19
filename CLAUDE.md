@@ -66,8 +66,15 @@ App a probar: Airsoft-Tactical-Calendar (~/Genexys/app-ivan/Airsoft-Tactical-Cal
   foe_infractions, foe_polls, foe_poll_votes, profiles, keep_alive.
 - No hay trigger en auth.users: el perfil lo crea la app. protect_profile_sensitive_fields deja
   pasar si auth.uid() es null (el seed con conexión directa puede fijar roles).
-- Los eventos de PROD están vacíos: el seed debe crearlos (uno MAD, uno FOE, uno global, y una
-  votación de la Junta Directiva) para poder probar que un MAD no ve nada de FOE.
+- Los eventos de PROD están vacíos: el seed los crea (reset-staging/reset.js).
+- NO existe evento "global": la política SELECT de events solo deja ver squad ∈ squads del usuario
+  (o super admin). Con squad='' solo lo vería el super admin; la app siempre asigna MAD o FOE.
+- La lógica de negocio (escalado de faltas, cierre por cuórum, recusación, ponderación) NO tiene
+  triggers en BD: vive en el front (src/store/use-calendar-store.js). Solo hay CHECKs de enums:
+  events.event_type normal|milsim; foe_polls.board junta_operativa|junta_directiva, status
+  open|closed; foe_infractions.severity apercibimiento|leve|grave|muy_grave, status
+  active|resolved; player_leaves.status pending|approved|rejected; team_documents.category
+  statutes|bof. events.date "YYYY-MM-DD" y hour "HH:MM" son text en hora local.
 - Regla de las 48 h: SÍ está implementada (el resumen de funcionalidades está desfasado).
   `removeRegistration` (src/store/use-calendar-store.js) la bloquea con un toast "Faltan menos de
   48 horas..." usando getEventLockStatus (src/lib/calendar-utils.js); no deshabilita el botón,
@@ -82,9 +89,15 @@ player_mad, blocked, sinequipo.
 1. ~~Crear usuarios QA~~ HECHO 19-nov: `node reset-staging/create-users.js` (con
    `set -a; source ~/.qa-lab.env; set +a`) -> 8 OK; perfiles con roles/squads/subroles correctos
    y login por contraseña 200 en staging. Es idempotente: re-ejecutarlo resetea contraseña y perfil.
-2. Leer restricciones CHECK de PROD (solo lectura): `psql "$PROD_DB" -c "select conrelid::regclass,
-   conname, pg_get_constraintdef(oid) from pg_constraint where connamespace='public'::regnamespace
-   and contype='c';"` y escribir seed.sql + reset.js idempotentes (vacía datos de prueba y recarga).
+2. ~~seed + reset~~ HECHO 19-nov: `npm run reset-staging` en shared (JS con service key, sin SQL
+   ni contraseña de BD -> vale igual en GitHub Actions; necesita STG_URL, STG_SECRET_KEY,
+   QA_PASSWORD). Asegura usuarios, vacía las 8 tablas de datos y carga: QA MAD · Partida próxima
+   (+10 d), QA FOE · Partida próxima (+10 d), QA FOE · MilSim próxima (+20 d, x1.5), QA FOE ·
+   Partida en menos de 48 h (+24 h, player_foe inscrito -> TC-C02), QA FOE · Partida finalizada
+   (-7 d, player_foe y admin_foe con asistencia), y 1 votación general de la Junta Directiva.
+   Salvaguardas: solo URL del staging y aborta si hay perfiles no-QA. Verificado por RLS con login
+   real: superadmin 5 eventos/1 votación; admin_foe 4/1; player_foe 4/0; admin_mad y player_mad
+   1/0; blocked y sinequipo 0/0. Pendiente: no limpia ficheros de Storage (solo filas).
 3. Desplegar `tactical-calendar-demo` en Vercel (mismo repo Airsoft-Tactical-Calendar) con
    VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY (y PUBLISHABLE_KEY si aplica) del STAGING y
    VITE_ENABLE_QA_LOGIN=true. Luego: `update targets set base_url=...` y `gh secret set TARGET_BASE_URL`.
