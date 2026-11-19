@@ -113,19 +113,32 @@ player_mad, blocked, sinequipo.
    read/write en todos los qa-* (si se crea un repo nuevo hay que añadirlo al token o el
    dispatch da 403 "Resource not accessible by personal access token"). Circuito API -> GitHub -> Supabase
    verificado: 201, run finished con github_run_url, summary, test_results y run_events.
-5. Playwright HECHO en local 19-nov (19 tests, 18 verdes + TC-A02 rojo por bug real):
-   tests/a-auth/{auth,rbac}.spec.ts y tests/b-eventos/eventos.spec.ts, fixtures/qa.ts (loginAs
-   con users.json de shared), pages/app-page.ts, global-setup.ts (reset del staging antes de
-   cada ejecución). Local: `ln -s ../ivan-qa-lab-shared shared` (ya creado, gitignored) y
-   `set -a; . ~/.qa-lab.env; set +a; BASE_URL=https://tactical-calendar-demo.vercel.app npx
-   playwright test` (el BASE_URL de ~/.qa-lab.env es la preview git-dev, NO el demo).
-   Con --reporter=list/dot NO corre qa-lab-reporter (result.json queda viejo).
-   Tests contra origin/main del calendario (lo que despliega el demo), nunca la copia local.
-   PENDIENTE: el usuario debe subir los secretos STG_URL, STG_SECRET_KEY y QA_PASSWORD a
-   qa-playwright (a Claude no le está permitido subir secretos) y luego validar en CI.
-   BUG pasado al agente del calendario (standby): RLS "Lectura de perfiles por unidad" impide al
-   bloqueado leer su propio perfil -> ve "Pendiente de asignación" sin nombre en vez de
-   "Acceso denegado" (también en PROD). Después Selenium (misma suite A para comparar), Cucumber (C y E en Given/When/Then),
+5. ~~Playwright~~ HECHO 19-nov, verde en local (19/19 x5) y en CI vía API (a-auth 13/13, b-eventos
+   6/6): tests/a-auth/{auth,rbac}.spec.ts, tests/b-eventos/eventos.spec.ts, fixtures/qa.ts
+   (loginAs con users.json de shared + espera de 1,5 s sin peticiones), pages/app-page.ts,
+   global-setup.ts (reserva el staging -> reset -> teardown libera). retries 0 (los tests mutan
+   el staging). CI sube como artefacto solo capturas .png de fallos (las trazas llevan la
+   contraseña QA y el repo es público). Local: `ln -s ../ivan-qa-lab-shared shared` (gitignored)
+   y `set -a; . ~/.qa-lab.env; set +a; BASE_URL=https://tactical-calendar-demo.vercel.app npx
+   playwright test` (el BASE_URL de ~/.qa-lab.env es la preview git-dev, NO el demo). Con
+   --reporter=list/dot NO corre qa-lab-reporter (result.json queda viejo). Tests contra
+   origin/main del calendario (lo que despliega el demo), nunca la copia local (otro agente la
+   edita).
+   RESERVA DEL STAGING (staging_lock, migración 20261119020000): toda ejecución (web/CI, local,
+   otro agente, `npm run reset-staging`) reserva con shared/reset-staging/lock.js antes de
+   resetear; atómica, caduca a 10 min, espera hasta 5 min y luego falla claro. La API responde
+   409 si está reservado. Credenciales: SUPABASE_URL/SUPABASE_SERVICE_KEY (CI) o
+   LAB_URL/LAB_SERVICE_KEY (~/.qa-lab.env). Sin ella, dos ejecuciones simultáneas se resetean
+   el staging mutuamente (causó fallos intermitentes de TC-B02).
+   Bugs de la app encontrados (pasados al agente del calendario):
+   (a) RLS "Lectura de perfiles por unidad": el bloqueado no podía leer su propio perfil ->
+       "Pendiente de asignación" en vez de "Acceso denegado". CORREGIDO en staging (¿PROD?).
+   (b) Doble loadCloudData tras el login (syncUserSession desde initAuth y onAuthStateChange):
+       la 2ª carga pisa en pantalla un cambio guardado entre medias (en BD sí está). PENDIENTE;
+       el workaround de 1,5 s en fixtures/qa.ts se puede quitar cuando se arregle.
+   Para pruebas repetidas desde la API: el límite 3/h por IP muerde; en desarrollo se libera
+   borrando run_requests propias (BD del lab, service key).
+   Después Selenium (misma suite A para comparar), Cucumber (C y E en Given/When/Then),
    Newman/Bruno/Karate (suite D y comprobación de RLS por API), Appium al final (resultados pregrabados).
 6. Solo cuando las herramientas funcionen: la web (home, página de herramienta con selector y botón
    Lanzar, pantalla en vivo con Realtime, resultados con métricas), Turnstile, ping keep-alive
