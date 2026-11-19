@@ -112,6 +112,8 @@ export async function POST(request: Request) {
       await db.from("runs")
         .update({ status: "failed", finished_at: new Date().toISOString() })
         .eq("id", run.id);
+      // El fallo es nuestro (token, GitHub caído): no gasta el cupo del visitante.
+      await db.from("run_requests").delete().eq("run_id", run.id);
       return json(502, { error: "No se pudo lanzar la ejecución", run_id: run.id });
     }
 

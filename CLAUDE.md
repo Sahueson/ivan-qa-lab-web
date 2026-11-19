@@ -87,8 +87,10 @@ player_mad, blocked, sinequipo.
 3. Desplegar `tactical-calendar-demo` en Vercel (mismo repo Airsoft-Tactical-Calendar) con
    VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY (y PUBLISHABLE_KEY si aplica) del STAGING y
    VITE_ENABLE_QA_LOGIN=true. Luego: `update targets set base_url=...` y `gh secret set TARGET_BASE_URL`.
-4. Crear GITHUB_TOKEN fine-grained (Actions: read/write sobre los qa-*), ponerlo en
-   ivan-qa-lab-web/.env.local y probar POST /api/runs con curl (esperado 201).
+4. ~~GITHUB_TOKEN + probar POST /api/runs~~ HECHO 19-nov: token fine-grained con Actions
+   read/write en qa-playwright y qa-selenium (añadir cada qa-* nuevo al token o el dispatch da
+   403 "Resource not accessible by personal access token"). Circuito API -> GitHub -> Supabase
+   verificado: 201, run finished con github_run_url, summary, test_results y run_events.
 5. Tests reales de Playwright: suites A (auth/RBAC) y B (eventos) contra el demo; el reporter ya
    existe. Después Selenium (misma suite A para comparar), Cucumber (C y E en Given/When/Then),
    Newman/Bruno/Karate (suite D y comprobación de RLS por API), Appium al final (resultados pregrabados).
@@ -98,7 +100,8 @@ player_mad, blocked, sinequipo.
 
 ## Reglas de trabajo
 - Una herramienta cada vez; primero funciona en local con result.json normalizado, luego workflow, luego web.
-- Nunca imprimir ni commitear claves. Secretos en ~/.qa-lab.env (fuera de los repos, chmod 600) y
+- Nunca imprimir ni commitear claves. Secretos en ~/.qa-lab.env (incluye LAB_*/STG_* keys,
+  BASE_URL y QA_* de usuarios; ya no hay .env en la raíz de ivan-qa-lab/) (fuera de los repos, chmod 600) y
   en GitHub Secrets / variables de Vercel. SUPABASE_SERVICE_KEY solo en servidor, nunca NEXT_PUBLIC_.
 - Antes de cualquier comando que escriba en una base de datos, comprobar que el ref es el del staging.
 - Contraseñas de base de datos sin símbolos (# % & @ / :) para que no rompan las cadenas de conexión.
