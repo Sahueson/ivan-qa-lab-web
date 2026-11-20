@@ -11,37 +11,45 @@ function LiveRunContent() {
   const { status, events } = useLiveRun(runId);
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Ejecución en vivo</h1>
-      <p className="text-gray-500 mb-6 font-mono text-sm">{runId}</p>
-      
-      <div className="mb-6 p-4 rounded bg-white shadow flex items-center gap-4">
-        <span className="text-lg">Estado actual:</span>
-        <span className={`px-3 py-1 rounded font-bold uppercase text-sm
-          ${status === 'queued' ? 'bg-yellow-100 text-yellow-800' : ''}
-          ${status === 'running' ? 'bg-blue-100 text-blue-800' : ''}
-          ${status === 'finished' ? 'bg-green-100 text-green-800' : ''}
-          ${status === 'failed' ? 'bg-red-100 text-red-800' : ''}
-        `}>
-          {status}
+    <div className="max-w-5xl mx-auto px-4 sm:px-8 py-6 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">Ejecución en vivo</h1>
+          <p className="text-xs text-[var(--text-secondary)] font-mono mt-1">RUN ID: {runId}</p>
+        </div>
+
+        <span
+          className={`px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider self-start ${
+            status === 'finished'
+              ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+              : status === 'failed'
+              ? 'bg-red-500/15 text-red-600 dark:text-red-400'
+              : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+          }`}
+        >
+          ● {status}
         </span>
       </div>
 
-      <div className="bg-white border rounded shadow p-4">
-        <h2 className="text-xl font-semibold mb-4">Terminal de eventos</h2>
-        <div className="bg-black text-green-400 p-4 rounded font-mono text-sm min-h-[300px] overflow-y-auto space-y-2">
+      <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-semibold">Stream de eventos en tiempo real</h2>
+          <span className="text-xs text-[var(--text-secondary)]">{events.length} eventos</span>
+        </div>
+
+        <div className="rounded-2xl bg-[#111211] text-neutral-200 p-5 font-mono text-xs sm:text-sm min-h-[340px] max-h-[500px] overflow-y-auto space-y-2.5">
           {events.length === 0 ? (
-            <p className="text-gray-500 italic">Esperando que el worker inicie y envíe eventos...</p>
+            <p className="text-neutral-500 italic">Esperando respuesta del runner de GitHub Actions...</p>
           ) : (
             events.map((ev, idx) => (
-              <div key={idx} className="flex gap-3">
-                <span className="text-gray-500 shrink-0">
-                  [{new Date(ev.created_at).toLocaleTimeString()}]
+              <div key={idx} className="flex gap-3 leading-relaxed">
+                <span className="text-neutral-500 shrink-0">
+                  {new Date(ev.created_at).toLocaleTimeString()}
                 </span>
-                <span className="font-bold text-white shrink-0">[{ev.event_type}]</span>
+                <span className="text-emerald-400 font-semibold shrink-0">[{ev.event_type}]</span>
                 <span>
-                  {ev.test_name && <span className="text-blue-300 mr-2">{ev.test_name}</span>}
-                  {ev.message && <span className="text-gray-300">{ev.message}</span>}
+                  {ev.test_name && <span className="text-sky-300 mr-2">{ev.test_name}</span>}
+                  {ev.message && <span className="text-neutral-300">{ev.message}</span>}
                   {ev.error_message && <span className="text-red-400">{ev.error_message}</span>}
                 </span>
               </div>
@@ -49,11 +57,14 @@ function LiveRunContent() {
           )}
         </div>
       </div>
-      
+
       {status === 'finished' && (
-        <div className="mt-8 text-center">
-          <Link href={`/runs/${runId}/results`} className="bg-black text-white px-6 py-2 rounded font-medium inline-block">
-            Ver Informe Completo y Métricas
+        <div className="flex justify-end">
+          <Link
+            href={`/runs/${runId}/results`}
+            className="px-6 py-3 rounded-full bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] text-sm font-medium hover:opacity-90 transition"
+          >
+            Ver informe y métricas →
           </Link>
         </div>
       )}
@@ -63,8 +74,8 @@ function LiveRunContent() {
 
 export default function LiveRunPage() {
   return (
-    <main className="min-h-screen bg-gray-50 p-8">
-      <Suspense fallback={<div className="max-w-4xl mx-auto p-8 text-center text-gray-500">Cargando terminal en vivo...</div>}>
+    <main className="pb-12">
+      <Suspense fallback={<div className="max-w-5xl mx-auto p-8 text-sm text-[var(--text-secondary)]">Conectando con Realtime...</div>}>
         <LiveRunContent />
       </Suspense>
     </main>

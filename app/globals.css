@@ -1,26 +1,34 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-canvas: #f1f2ee;
+  --bg-surface: #ffffff;
+  --bg-surface-muted: #f7f8f5;
+  --bg-hero: #141413;
+  --text-hero: #ffffff;
+  --text-primary: #141413;
+  --text-secondary: #6e706b;
+  --border-subtle: #e4e5e0;
+  --pill-active-bg: #141413;
+  --pill-active-text: #ffffff;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --bg-canvas: #0d0e0d;
+  --bg-surface: #181918;
+  --bg-surface-muted: #212221;
+  --bg-hero: #070707;
+  --text-hero: #ffffff;
+  --text-primary: #f4f4f2;
+  --text-secondary: #8e908b;
+  --border-subtle: #272827;
+  --pill-active-bg: #ffffff;
+  --pill-active-text: #141413;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  transition: background-color 0.25s ease, color 0.25s ease;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }

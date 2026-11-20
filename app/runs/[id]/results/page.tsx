@@ -8,7 +8,7 @@ async function ResultsContent({ params }: { params: Promise<{ id: string }> }) {
 
   const [summaryRes, testsRes] = await Promise.all([
     db.from('run_summary').select('*').eq('run_id', runId).single(),
-    db.from('test_results').select('*').eq('run_id', runId).order('name', { ascending: true })
+    db.from('test_results').select('*').eq('run_id', runId).order('name', { ascending: true }),
   ]);
 
   const summary = summaryRes.data;
@@ -16,71 +16,134 @@ async function ResultsContent({ params }: { params: Promise<{ id: string }> }) {
 
   if (!summary) {
     return (
-      <div className="max-w-4xl mx-auto p-8 text-center text-red-500">
+      <div className="max-w-5xl mx-auto p-8 text-center text-sm text-[var(--text-secondary)]">
         Resultados no encontrados o la ejecución aún no ha finalizado.
       </div>
     );
   }
 
-  return (
-    <div className="max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8">Informe de Ejecución</h1>
-      <p className="text-gray-500 mb-6 font-mono text-sm">ID: {runId}</p>
+  const passRate = summary.total > 0 ? Math.round((summary.passed / summary.total) * 100) : 0;
+  const maxDuration = Math.max(...tests.map((t) => t.duration_ms || 1000), 1000);
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white p-4 rounded shadow border-l-4 border-blue-500">
-          <p className="text-gray-500 text-sm">Total Tests</p>
-          <p className="text-2xl font-bold">{summary.total}</p>
+  return (
+    <div className="max-w-6xl mx-auto px-4 sm:px-8 py-6 space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-semibold tracking-tight">Reports</h1>
+          <p className="text-xs text-[var(--text-secondary)] font-mono mt-1">RUN ID: {runId}</p>
         </div>
-        <div className="bg-white p-4 rounded shadow border-l-4 border-green-500">
-          <p className="text-gray-500 text-sm">Pasados</p>
-          <p className="text-2xl font-bold text-green-600">{summary.passed}</p>
+        <Link
+          href="/"
+          className="px-4 py-2 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-sm font-medium hover:opacity-80 transition self-start"
+        >
+          ← Volver a Studio
+        </Link>
+      </div>
+
+      {/* 4 Tarjetas KPI estilo Reports */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="rounded-[24px] bg-[var(--bg-hero)] text-[var(--text-hero)] border border-[var(--border-subtle)] p-6 flex flex-col justify-between min-h-[150px]">
+          <span className="text-xs opacity-70">Tasa de éxito</span>
+          <span className="text-3xl font-semibold tracking-tight">{passRate}%</span>
+          <span className="text-xs opacity-60">{summary.passed} de {summary.total} tests</span>
         </div>
-        <div className="bg-white p-4 rounded shadow border-l-4 border-red-500">
-          <p className="text-gray-500 text-sm">Fallados</p>
-          <p className="text-2xl font-bold text-red-600">{summary.failed}</p>
+
+        <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6 flex flex-col justify-between min-h-[150px]">
+          <span className="text-xs text-[var(--text-secondary)]">Pasados</span>
+          <span className="text-3xl font-semibold text-emerald-600 dark:text-emerald-400">{summary.passed}</span>
+          <span className="text-xs text-[var(--text-secondary)]">Aserciones correctas</span>
         </div>
-        <div className="bg-white p-4 rounded shadow border-l-4 border-yellow-500">
-          <p className="text-gray-500 text-sm">Tiempo (s)</p>
-          <p className="text-2xl font-bold">{(summary.duration_ms / 1000).toFixed(1)}</p>
+
+        <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6 flex flex-col justify-between min-h-[150px]">
+          <span className="text-xs text-[var(--text-secondary)]">Fallados</span>
+          <span className="text-3xl font-semibold text-red-600 dark:text-red-400">{summary.failed}</span>
+          <span className="text-xs text-[var(--text-secondary)]">Requieren revisión</span>
+        </div>
+
+        <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6 flex flex-col justify-between min-h-[150px]">
+          <span className="text-xs text-[var(--text-secondary)]">Duración total</span>
+          <span className="text-3xl font-semibold">{(summary.duration_ms / 1000).toFixed(1)}s</span>
+          <span className="text-xs text-[var(--text-secondary)]">Tiempo neto suite</span>
         </div>
       </div>
 
-      <div className="bg-white rounded shadow overflow-hidden overflow-x-auto">
+      {/* Gráfico de barras verticales por test (inspirado en "By week" de Talmo) */}
+      {tests.length > 0 && (
+        <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6">
+          <h2 className="text-base font-semibold mb-1">Tiempos por escenario</h2>
+          <p className="text-xs text-[var(--text-secondary)] mb-6">Comparativa de duración en segundos</p>
+          <div className="flex items-end gap-3 h-36 pt-4 px-2">
+            {tests.map((test) => {
+              const heightPct = Math.max(15, Math.round(((test.duration_ms || 500) / maxDuration) * 100));
+              return (
+                <div key={test.id} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
+                  <span className="text-[11px] font-mono text-[var(--text-secondary)]">
+                    {test.duration_ms ? `${(test.duration_ms / 1000).toFixed(1)}s` : '-'}
+                  </span>
+                  <div
+                    style={{ height: `${heightPct}%` }}
+                    className={`w-full max-w-[44px] rounded-t-xl transition-all ${
+                      test.status === 'failed'
+                        ? 'bg-red-500'
+                        : 'bg-[var(--pill-active-bg)] opacity-85 hover:opacity-100'
+                    }`}
+                  />
+                  <span className="text-[11px] text-[var(--text-secondary)] truncate max-w-[70px]">
+                    {test.name}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Tabla de resultados */}
+      <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] overflow-hidden overflow-x-auto">
         <table className="w-full text-left min-w-[600px]">
-          <thead className="bg-gray-100 border-b">
+          <thead className="border-b border-[var(--border-subtle)] text-xs text-[var(--text-secondary)]">
             <tr>
-              <th className="p-4">Test</th>
-              <th className="p-4">Estado</th>
-              <th className="p-4">Duración</th>
-              <th className="p-4">Evidencia</th>
+              <th className="p-5 font-medium">Escenario</th>
+              <th className="p-5 font-medium">Estado</th>
+              <th className="p-5 font-medium">Duración</th>
+              <th className="p-5 font-medium">Evidencia</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-[var(--border-subtle)] text-sm">
             {tests.map((test) => (
-              <tr key={test.id} className="border-b hover:bg-gray-50">
-                <td className="p-4 font-medium">
+              <tr key={test.id} className="hover:bg-[var(--bg-surface-muted)]/60 transition">
+                <td className="p-5 font-medium">
                   {test.name}
-                  {test.error && <p className="text-red-500 text-sm mt-1">{test.error}</p>}
+                  {test.error && <p className="text-red-500 text-xs mt-1 font-mono">{test.error}</p>}
                 </td>
-                <td className="p-4">
-                  <span className={`px-2 py-1 rounded text-xs font-bold uppercase
-                    ${test.status === 'passed' ? 'bg-green-100 text-green-800' : 
-                      test.status === 'failed' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}
-                  `}>
+                <td className="p-5">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${
+                      test.status === 'passed'
+                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                        : test.status === 'failed'
+                        ? 'bg-red-500/15 text-red-600 dark:text-red-400'
+                        : 'bg-neutral-500/15 text-neutral-500'
+                    }`}
+                  >
                     {test.status}
                   </span>
                 </td>
-                <td className="p-4 text-gray-500">
-                  {test.duration_ms ? (test.duration_ms / 1000).toFixed(1) + 's' : '-'}
+                <td className="p-5 text-[var(--text-secondary)] font-mono text-xs">
+                  {test.duration_ms ? `${(test.duration_ms / 1000).toFixed(1)}s` : '-'}
                 </td>
-                <td className="p-4">
+                <td className="p-5">
                   {test.evidence_url ? (
-                    <a href={test.evidence_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-sm font-medium">
-                      Ver captura
+                    <a
+                      href={test.evidence_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1 rounded-full bg-[var(--bg-surface-muted)] border border-[var(--border-subtle)] text-xs font-medium hover:opacity-80 transition inline-block"
+                    >
+                      Ver captura ↗
                     </a>
                   ) : (
-                    <span className="text-gray-400 text-sm">-</span>
+                    <span className="text-[var(--text-secondary)] text-xs">-</span>
                   )}
                 </td>
               </tr>
@@ -88,20 +151,14 @@ async function ResultsContent({ params }: { params: Promise<{ id: string }> }) {
           </tbody>
         </table>
       </div>
-
-      <div className="mt-8 text-center flex gap-4 justify-center">
-        <Link href="/" className="bg-gray-200 text-gray-800 px-6 py-2 rounded font-medium hover:bg-gray-300 transition">
-          Volver al inicio
-        </Link>
-      </div>
     </div>
   );
 }
 
 export default function ResultsPage({ params }: { params: Promise<{ id: string }> }) {
   return (
-    <main className="min-h-screen bg-gray-50 p-8">
-      <Suspense fallback={<div className="max-w-4xl mx-auto p-8 text-center text-gray-500">Cargando informe de resultados...</div>}>
+    <main className="pb-12">
+      <Suspense fallback={<div className="max-w-6xl mx-auto p-8 text-sm text-[var(--text-secondary)]">Cargando informe...</div>}>
         <ResultsContent params={params} />
       </Suspense>
     </main>
