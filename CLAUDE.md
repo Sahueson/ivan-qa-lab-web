@@ -183,24 +183,38 @@ player_mad, blocked, sinequipo.
    RUN_ID); en local no. Verificado en CI: 6/6 con 6 URLs 200.
    Para pruebas repetidas desde la API: el límite 3/h por IP muerde; en desarrollo se libera
    borrando run_requests propias (BD del lab, service key).
-   SELENIUM (20-nov, EN CURSO): un solo repo qa-selenium con java/ (Java 21 + JUnit 6 +
-   Maven, suites = @Tag -> `mvn test -Dgroups=a-auth`) y python/ (3.12 + pytest, suites =
-   carpetas -> `pytest tests/a-auth`). Un workflow por lenguaje (run-tests-java.yml y
-   run-tests-python.yml, ubuntu-latest sin contenedor: trae Chrome; Selenium Manager pone el
-   chromedriver). Dos herramientas en `tools` (selenium-java, selenium-python), mismo repo,
-   live_execution=false hasta pasar en CI.
-   Mismos casos y nombres que Playwright. Hecha la suite A (13 tests): Python 13/13 contra el
-   demo en local; Java sin compilar en local (falta el JDK: solo hay JRE 21).
+   SELENIUM: HECHO 20-nov. Un solo repo, qa-selenium:
+   - java/: Java 21 + JUnit 6 + Maven; suites = @Tag -> `mvn test -Dgroups=a-auth`.
+   - python/: Python 3.12 + pytest; suites = carpetas -> `pytest tests/a-auth`.
+   Mismos 70 casos y nombres que Playwright (9 suites): 70/70 en local contra el demo en
+   los dos lenguajes (Python 3 min 51 s, Java 3 min 56 s; Playwright 3 min 07 s).
+   CI vía la web: la suite A 13/13 en ambos (Python 92 s, Java 81 s).
+   Un workflow por lenguaje (run-tests-java.yml, run-tests-python.yml) en ubuntu-latest sin
+   contenedor: trae Chrome y Selenium Manager pone el chromedriver.
+   En `tools` hay dos herramientas (selenium-java, selenium-python), mismo repo,
+   live_execution=true. Sus 9 suites tienen estimated_seconds = el de Playwright + 10 s.
    Piezas nuevas en shared, que valen para cualquier herramienta que no sea Node:
    - reset-staging/with-staging.js -- <cmd>: reserva + reset + tests + libera; el hijo hereda
      QA_LOCK_HELD=1 y reset.js no vuelve a pedir la reserva;
    - publish-results.js result.json: sube las evidence_path, tapa QA_PASSWORD y cierra el run.
-   Selenium no tiene eventos de red: se inyecta por CDP (Page.addScriptToEvaluateOnNewDocument)
-   un contador de fetch a Supabase (window.__qa) para waitForQuietNetwork.
-   Gotcha: el getText()/.text de Selenium es texto renderizado (CSS uppercase -> "QA JUGADOR
-   MAD"); para comparar como toContainText se usa textContent.
-   PENDIENTE: el usuario pone los 6 secretos en qa-selenium (los mismos que qa-playwright);
-   validar ambos en CI; live_execution=true; portar B-I.
+   Cada suite resetea al empezar (Java: @BeforeAll en cada clase; Python: fixture de módulo).
+   Script inyectado por CDP (Page.addScriptToEvaluateOnNewDocument), window.__qa, envuelve fetch:
+   - cuenta en vuelo/total -> waitForQuietNetwork y openEvent (espera la petición lanzada tras
+     el clic);
+   - retraso opcional de GET (`__qa.delay = {pattern, ms}`) -> TC-D05;
+   - guarda la apikey pública -> TC-I02 pregunta a Storage.
+   Diferencias con Playwright que hubo que resolver:
+   - getText()/.text es texto renderizado (CSS uppercase -> "QA JUGADOR MAD"): comparar con
+     textContent, como toContainText;
+   - React parte en varios nodos los textos con variables ("…(iniciada por", " ", "QA Admin
+     MAD", ")"): buscar el elemento más interno cuyo texto completo lo contiene (como
+     getByText), no text()[contains()];
+   - sin getByRole: XPath por texto visible (button("…"), heading("…"));
+   - inputs date/time: setter nativo + eventos input/change (send_keys depende del idioma);
+   - sin auto-wait: cada comprobación es una espera explícita de 10 s.
+   Secretos del repo: los mismos 6 que qa-playwright. El primer intento dejó vacío
+   SUPABASE_SERVICE_KEY, y entonces el job ni siquiera puede marcar el run como fallido y se
+   queda en `queued`: se cerró a mano.
    Gotcha de Playwright: si un test falla, Playwright reinicia el worker y vuelve a ejecutar el
    beforeAll (resetStaging) para los tests siguientes, y borra lo que hubieran creado los
    anteriores.

@@ -22,18 +22,20 @@ from tools t, targets g,
     ('i-normas', 'Normas del equipo', 'PDF en bucket privado: subida, enlace firmado, borrado del fichero y quién sube y ve', 105)
   ) as s(slug, name, description, secs)
 where t.slug = 'playwright' and g.slug = 'tactical-calendar';
+
 -- Selenium (Java y Python): mismo repo qa-selenium, un workflow por lenguaje. Mismos casos que
--- Playwright; de momento la suite A. live_execution pasa a true cuando el repo tiene sus
--- secretos y la suite ha pasado en CI.
+-- Playwright (suites A-I, 70 tests en cada lenguaje).
 insert into tools (slug, name, category, description, github_repo, workflow_file, enabled, live_execution) values
   ('selenium-java', 'Selenium · Java', 'front',
    'WebDriver clásico con Java 21, JUnit 6 y page objects. Mismos casos que Playwright.',
-   'Sahueson/qa-selenium', 'run-tests-java.yml', true, false),
+   'Sahueson/qa-selenium', 'run-tests-java.yml', true, true),
   ('selenium-python', 'Selenium · Python', 'front',
    'WebDriver con Python 3.12, pytest y page objects. Mismos casos que Playwright.',
-   'Sahueson/qa-selenium', 'run-tests-python.yml', true, false);
+   'Sahueson/qa-selenium', 'run-tests-python.yml', true, true);
 
+-- Las mismas 9 suites que Playwright (mismos casos); tiempo = el de Playwright en CI + 10 s
+-- (la suite A midió 92 s en Python y 81 s en Java frente a 80 s en Playwright).
 insert into suites (tool_id, target_id, slug, name, description, estimated_seconds)
-select t.id, g.id, 'a-auth', 'Autenticación y perfiles', 'Login, bloqueo de usuarios, ficha de operador y qué ve cada rol', 35
-from tools t, targets g
-where t.slug in ('selenium-java', 'selenium-python') and g.slug = 'tactical-calendar';
+select t.id, s.target_id, s.slug, s.name, s.description, s.estimated_seconds + 10
+from tools t, suites s join tools pw on pw.id = s.tool_id and pw.slug = 'playwright'
+where t.slug in ('selenium-java', 'selenium-python');

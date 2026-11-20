@@ -79,17 +79,22 @@ async function discoverTestsFromGitHub(
         const matchedSuite = suites.find((s) => {
           if (s.slug === 'all') return false;
           const shortSlug = s.slug.replace(/^[a-z]-/, '');
-          return lowerPath.includes(s.slug.toLowerCase()) || (shortSlug.length > 2 && lowerPath.includes(shortSlug));
+          // Playwright y Python: carpeta tests/a-auth/; Java: paquete tests/a_auth/.
+          return lowerPath.includes(s.slug.toLowerCase()) || lowerPath.includes(s.slug.toLowerCase().replace(/-/g, '_'))
+            || (shortSlug.length > 2 && lowerPath.includes(shortSlug));
         });
 
         if (isJava) {
-          const javaRegex = /@Test[\s\S]{0,160}?(?:public\s+)?void\s+([a-zA-Z0-9_]+)\s*\(/g;
+          // Nombre visible = @DisplayName("TC-A01 ...") (el mismo que en Playwright); el filtro
+          // (grep) usa el nombre del método (tcA01_...), que es lo que entiende surefire.
+          const javaRegex = /@Test\b((?:(?!@Test\b)[\s\S]){0,400}?)(?:public\s+)?void\s+([a-zA-Z0-9_]+)\s*\(/g;
           let m: RegExpExecArray | null;
           while ((m = javaRegex.exec(content)) !== null) {
-            const methodName = m[1];
+            const displayName = m[1].match(/@DisplayName\(\s*"([^"]+)"\s*\)/)?.[1];
+            const methodName = m[2];
             discovered.push({
               id: `${file.path}:${methodName}`,
-              name: methodName.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim(),
+              name: displayName ?? methodName.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim(),
               grepValue: methodName,
               suiteSlug: matchedSuite?.slug,
               duration: 4.0,
@@ -97,13 +102,16 @@ async function discoverTestsFromGitHub(
             });
           }
         } else if (isPython) {
-          const pyRegex = /def\s+(test_[a-zA-Z0-9_]+)\s*\(/g;
+          // Nombre visible = @pytest.mark.case("TC-A01 ...") (el mismo que en Playwright); el
+          // filtro (grep) usa el nombre de la función (test_tc_a01_...), que es lo que entiende -k.
+          const pyRegex = /(?:@pytest\.mark\.case\(\s*"([^"]+)"\s*\)\s*\n(?:\s*@[^\n]*\n)*)?\s*def\s+(test_[a-zA-Z0-9_]+)\s*\(/g;
           let m: RegExpExecArray | null;
           while ((m = pyRegex.exec(content)) !== null) {
-            const fnName = m[1];
+            const caseName = m[1];
+            const fnName = m[2];
             discovered.push({
               id: `${file.path}:${fnName}`,
-              name: fnName.replace(/^test_/, '').replace(/_/g, ' '),
+              name: caseName ?? fnName.replace(/^test_/, '').replace(/_/g, ' '),
               grepValue: fnName,
               suiteSlug: matchedSuite?.slug,
               duration: 4.0,
