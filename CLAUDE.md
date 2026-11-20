@@ -203,6 +203,29 @@ player_mad, blocked, sinequipo.
    - que POST /api/runs acepte una selección de tags o tests, no solo la suite;
    - que el workflow filtre (Playwright: `--grep`).
    Límites: expire_stale_runs (15 min) y la reserva del staging.
+   TIEMPOS PARA EL CONTADOR: medirlos en CI contra STG, no en local (en CI va unas 3 veces más
+   lento: suite G 16 s en local y 48 s en CI). PENDIENTE, aplazado a las ejecuciones
+   programadas: 9 suites x 3 vueltas en serie son unas 1,5 h.
+   Método:
+   - mediana de test_results.duration_ms por test, solo de runs de CI;
+   - desglose por run con la API de jobs de GitHub
+     (`env -u GITHUB_TOKEN gh api repos/Sahueson/qa-playwright/actions/runs/<id>/jobs`, el id
+     sale de runs.github_run_url):
+     - cola = de runs.created_at al inicio del job;
+     - arranque = del inicio del job al paso "Ejecutar tests";
+     - tests = duración de ese paso (reserva + reset + tests);
+     - cierre = resto.
+   Resultado: guardar en docs/tiempos-ejecucion.md (tabla por test) y el resumen aquí.
+   Primer dato (20-nov, a-auth, 13/13):
+   | Tramo   | Segundos | Qué incluye                          |
+   |---------|----------|--------------------------------------|
+   | Total   | 78       | lo que ve el visitante               |
+   | Cola    | 5        | de pulsar Lanzar a que empieza el job |
+   | Arranque| 33       | contenedor, checkout y npm ci        |
+   | Tests   | 39       | reserva + reset + tests              |
+   | Cierre  | 5        | subir resultados y capturas          |
+   El contador sería: unos 45 s fijos (cola + arranque + cierre) + la suma de los tests marcados.
+   estimated_seconds de `suites` (25-45 s) está medido en LOCAL: se recalcula con los datos de CI.
 
 ## Reglas de trabajo
 - `gh` con el .env.local cargado usa su GITHUB_TOKEN (solo Actions) y da 403 en secrets: usar
