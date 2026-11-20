@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, type ReactNode } from 'react';
 
 const TIEMPO_FIJO = 39;
 const TIEMPO_PREP = 21;
@@ -42,11 +42,15 @@ export default function RunSelector({
   variants,
   suitesByTool,
   testsByTool,
+  recentRunsByTool,
 }: {
   initialToolSlug: string;
   variants?: Variant[];
   suitesByTool: Record<string, SuiteItem[]>;
   testsByTool: Record<string, DiscoveredTest[]>;
+  /** Bloque "Últimas ejecuciones" de cada herramienta (renderizado en el servidor): se muestra
+   *  el de la variante activa, igual que la lista de tests (Selenium: Python o Java). */
+  recentRunsByTool?: Record<string, ReactNode>;
 }) {
   const [activeToolSlug, setActiveToolSlug] = useState(initialToolSlug);
   const suites = suitesByTool[activeToolSlug] || [];
@@ -510,6 +514,8 @@ export default function RunSelector({
           </div>
         </div>
       </div>
+
+      {recentRunsByTool?.[activeToolSlug]}
     </div>
   );
 }

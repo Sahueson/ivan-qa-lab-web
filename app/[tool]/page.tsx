@@ -229,9 +229,10 @@ async function ToolContent({ params }: { params: Promise<{ tool: string }> }) {
         variants={seleniumVariants}
         suitesByTool={suitesByTool}
         testsByTool={testsByTool}
+        recentRunsByTool={Object.fromEntries(
+          relevantTools.map((t) => [t.slug, <RecentRuns key={t.slug} toolIds={[t.id]} title={`Últimas ejecuciones · ${t.name}`} />])
+        )}
       />
-
-      <RecentRuns toolIds={relevantToolIds} />
     </div>
   );
 }
