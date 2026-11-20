@@ -73,7 +73,7 @@ export default async function SuiteGrid() {
       .from('runs')
       .select('id, suite_id, status, created_at, run_summary(total, passed, failed)')
       .order('created_at', { ascending: false })
-      .limit(80),
+      .limit(500),
   ]);
 
   const tools = (toolsRes.data ?? []) as ToolRow[];

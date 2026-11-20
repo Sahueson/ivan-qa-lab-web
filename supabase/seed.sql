@@ -82,14 +82,12 @@ insert into tools (slug, name, category, description, github_repo, workflow_file
    'Prueba de carga ligera (5 usuarios virtuales) sobre la API, con umbral de percentil 95 por caso.',
    'Sahueson/qa-jmeter', 'run-tests.yml', true, false);
 
+-- Las 9 suites (A-I) de cada herramienta de API y rendimiento, con los nombres de las de Playwright. Mismos dominios:
+-- los casos de API (57, TC-API01..58) y de carga (16, PERF-01..16) se reparten por suite. Tiempo: estimado, se reajusta con CI.
 insert into suites (tool_id, target_id, slug, name, description, estimated_seconds)
-select t.id, g.id, 'api', 'API · RLS y roles',
-       '17 casos: acceso anónimo denegado, login y visibilidad de partidas por rol.', 70
-from tools t, targets g
-where t.slug in ('newman', 'bruno', 'karate') and g.slug = 'tactical-calendar';
-
-insert into suites (tool_id, target_id, slug, name, description, estimated_seconds)
-select t.id, g.id, 'carga', 'Carga ligera',
-       '3 casos: ping, lectura anónima y lectura autenticada con p95 bajo umbral.', 90
-from tools t, targets g
-where t.slug = 'jmeter' and g.slug = 'tactical-calendar';
+select t.id, s.target_id, s.slug, s.name,
+       case when t.slug = 'jmeter' then 'Rendimiento (p95 por caso): ' else 'API (RLS y roles): ' end || s.description,
+       case when t.slug = 'jmeter' then 80 else 70 end
+from tools t, suites s join tools pw on pw.id = s.tool_id and pw.slug = 'playwright'
+where t.slug in ('newman', 'bruno', 'karate', 'jmeter')
+  and not exists (select 1 from suites x where x.tool_id = t.id and x.slug = s.slug);

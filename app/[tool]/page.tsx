@@ -74,16 +74,23 @@ async function discoverTestsFromGitHub(
     const isPython = toolSlug.includes('python');
     const isJava = toolSlug.includes('java');
     const isCucumber = toolSlug.includes('cucumber');
+    const isKarate = toolSlug === 'karate'; // Gherkin como Cucumber (un .feature por suite)
+    const isBruno = toolSlug === 'bruno';
+    const isNewman = toolSlug === 'newman';
+    const isJmeter = toolSlug === 'jmeter';
 
     const testFiles = files
       .filter((f) => {
         if (f.type !== 'blob') return false;
-        if (isCucumber) return /\.feature$/.test(f.path);
+        if (isCucumber || isKarate) return /\.feature$/.test(f.path);
+        if (isBruno) return /\.bru$/.test(f.path);
+        if (isNewman) return /\.postman_collection\.json$/.test(f.path);
+        if (isJmeter) return /(^|\/)cases\.json$/.test(f.path);
         if (isJava) return /Test\.java$/.test(f.path);
         if (isPython) return /(^|\/)test_.*\.py$|_test\.py$/.test(f.path);
         return /\.(spec|test|cy)\.(ts|js|tsx|jsx)$/.test(f.path); // Playwright (.spec) y Cypress (.cy)
       })
-      .slice(0, 35);
+      .slice(0, 80);
 
     const discovered: DiscoveredTest[] = [];
 
@@ -110,7 +117,57 @@ async function discoverTestsFromGitHub(
             || (shortSlug.length > 2 && lowerPath.includes(shortSlug));
         });
 
-        if (isCucumber) {
+        if (isNewman) {
+          // Colección de Postman: una carpeta por suite (a-auth...) y un caso por petición. El filtro (grep) es el
+          // nombre exacto del caso (run.sh lo pasa como --folder).
+          try {
+            const col = JSON.parse(content) as { item?: { name: string; item?: { name: string }[] }[] };
+            for (const folder of col.item ?? []) {
+              for (const req of folder.item ?? []) {
+                discovered.push({
+                  id: `${file.path}:${folder.name}/${req.name}`,
+                  name: req.name,
+                  grepValue: `^${escapeRegex(req.name)}$`,
+                  suiteSlug: suites.find((x) => x.slug === folder.name)?.slug,
+                  duration: 1.0,
+                  filePath: file.path,
+                });
+              }
+            }
+          } catch {
+            // colección no legible: sin casos sueltos
+          }
+        } else if (isJmeter) {
+          // cases.json: { "PERF-01 Nombre": { suite, limit, role } }. El filtro (grep) es el nombre exacto.
+          try {
+            const cases = JSON.parse(content) as Record<string, { suite: string }>;
+            for (const [name, c] of Object.entries(cases)) {
+              discovered.push({
+                id: `${file.path}:${name}`,
+                name,
+                grepValue: `^${escapeRegex(name)}$`,
+                suiteSlug: suites.find((x) => x.slug === c.suite)?.slug,
+                duration: 1.0,
+                filePath: file.path,
+              });
+            }
+          } catch {
+            // sin casos sueltos
+          }
+        } else if (isBruno) {
+          // .bru: el nombre está en el bloque meta { name: ... }; la suite es la carpeta (api/a-auth/...).
+          const name = content.match(/meta\s*\{[^}]*?\bname:\s*(.+)/)?.[1]?.trim();
+          if (name) {
+            discovered.push({
+              id: `${file.path}:${name}`,
+              name,
+              grepValue: `^${escapeRegex(name)}$`,
+              suiteSlug: matchedSuite?.slug,
+              duration: 1.0,
+              filePath: file.path,
+            });
+          }
+        } else if (isCucumber || isKarate) {
           // Gherkin (en español o inglés): cada "Escenario:" es un caso; un "Esquema del escenario:"
           // genera uno por fila de "Ejemplos:" sustituyendo <columna>, como hace Cucumber. El filtro
           // (grep) es el nombre exacto como regex anclada, para --name de cucumber-js.
