@@ -3,7 +3,9 @@ import { useState, useMemo, useEffect } from 'react';
 
 const TIEMPO_FIJO = 39;
 const TIEMPO_PREP = 21;
-const SUT_URL = 'https://tactical-calendar-demo.vercel.app/';
+const SUT_DEV_URL = 'https://tactical-calendar-dev.vercel.app/';
+const ACCESS_MAILTO =
+  'mailto:ivancabanillas93@gmail.com?subject=Solicitud%20de%20acceso%20-%20Tactical%20Calendar%20(QA%20Lab)&body=Hola%20Iv%C3%A1n%2C%0A%0AHe%20estado%20probando%20Ivan%20QA%20Lab%20y%20me%20gustar%C3%ADa%20solicitar%20un%20usuario%20de%20prueba%20para%20explorar%20Tactical%20Calendar%20en%20el%20entorno%20dev.%0A%0AUn%20saludo.';
 
 export type Variant = {
   id: string;
@@ -168,28 +170,37 @@ export default function RunSelector({
   return (
     <div className="space-y-6">
       {/* Banner de contexto: Sistema Bajo Prueba (SUT) */}
-      <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
+      <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="space-y-1.5">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[var(--bg-surface-muted)] border border-[var(--border-subtle)] text-[var(--text-secondary)]">
               Sistema bajo prueba (SUT)
             </span>
-            <span className="text-xs font-medium text-[var(--text-primary)]">Tactical Calendar</span>
+            <span className="text-sm font-semibold text-[var(--text-primary)]">Tactical Calendar</span>
           </div>
           <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed max-w-2xl">
-            Aplicación web de gestión de partidas, inscripciones, roles (MAD / FOE) y gobernanza de equipo. El acceso autenticado está aislado para los workers de CI con el fin de proteger la integridad de los datos de staging.
+            Aplicación de gestión de partidas, inscripciones, roles (MAD / FOE) y gobernanza. Los tests automatizados corren sobre <strong className="font-medium text-[var(--text-primary)]">staging</strong>; si quieres explorar la app manualmente en <strong className="font-medium text-[var(--text-primary)]">dev</strong>, solicítame un usuario base y te lo facilito al momento.
           </p>
         </div>
 
-        <a
-          href={SUT_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="px-4 py-2.5 rounded-full bg-[var(--bg-surface-muted)] border border-[var(--border-subtle)] text-xs font-medium hover:border-[var(--text-primary)] transition shrink-0 self-start md:self-center inline-flex items-center gap-1.5"
-        >
-          <span>Abrir app objetivo</span>
-          <span>↗</span>
-        </a>
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <a
+            href={ACCESS_MAILTO}
+            className="px-4 py-2.5 rounded-full bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] text-xs font-medium hover:opacity-90 transition inline-flex items-center gap-1.5"
+          >
+            <span>Solicitar usuario</span>
+          </a>
+
+          <a
+            href={SUT_DEV_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2.5 rounded-full bg-[var(--bg-surface-muted)] border border-[var(--border-subtle)] text-xs font-medium hover:border-[var(--text-primary)] transition inline-flex items-center gap-1.5"
+          >
+            <span>Abrir entorno dev</span>
+            <span>↗</span>
+          </a>
+        </div>
       </div>
 
       {/* Tarjeta principal del Selector */}
@@ -212,11 +223,10 @@ export default function RunSelector({
                     key={v.id}
                     type="button"
                     onClick={() => setActiveToolSlug(v.slug)}
-                    className={`px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
-                      isSelected
+                    className={`px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${isSelected
                         ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs'
                         : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                    }`}
+                      }`}
                   >
                     {v.label}
                   </button>
@@ -243,11 +253,10 @@ export default function RunSelector({
                 <button
                   type="button"
                   onClick={toggleAllSuites}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition cursor-pointer ${
-                    allGlobalSelected
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition cursor-pointer ${allGlobalSelected
                       ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] border-transparent'
                       : 'bg-[var(--bg-surface-muted)] border-[var(--border-subtle)] hover:border-[var(--text-primary)]'
-                  }`}
+                    }`}
                 >
                   {allGlobalSelected
                     ? `Desmarcar todas (${allTests.length} tests)`
@@ -270,22 +279,20 @@ export default function RunSelector({
                       setActiveSuiteSlug(s.slug);
                       setSearchQuery('');
                     }}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition cursor-pointer inline-flex items-center gap-2 ${
-                      isViewing
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition cursor-pointer inline-flex items-center gap-2 ${isViewing
                         ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] border-transparent'
                         : selectedInSuite > 0
-                        ? 'bg-[var(--bg-surface-muted)] border-[var(--text-primary)] text-[var(--text-primary)]'
-                        : 'bg-[var(--bg-surface-muted)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                    }`}
+                          ? 'bg-[var(--bg-surface-muted)] border-[var(--text-primary)] text-[var(--text-primary)]'
+                          : 'bg-[var(--bg-surface-muted)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                      }`}
                   >
                     <span>{s.name}</span>
                     {suiteTests.length > 0 && (
                       <span
-                        className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
-                          selectedInSuite > 0
+                        className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${selectedInSuite > 0
                             ? 'bg-emerald-500/20 text-emerald-500 font-semibold'
                             : 'opacity-60'
-                        }`}
+                          }`}
                       >
                         {selectedInSuite > 0 ? `${selectedInSuite}/${suiteTests.length}` : suiteTests.length}
                       </span>
@@ -359,11 +366,10 @@ export default function RunSelector({
                 return (
                   <label
                     key={test.id}
-                    className={`flex items-center justify-between p-3.5 rounded-2xl border cursor-pointer transition ${
-                      checked
+                    className={`flex items-center justify-between p-3.5 rounded-2xl border cursor-pointer transition ${checked
                         ? 'bg-[var(--bg-surface-muted)] border-[var(--text-primary)]'
                         : 'border-[var(--border-subtle)] hover:bg-[var(--bg-surface-muted)]/60'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-3.5 min-w-0 pr-3">
                       <input
@@ -407,10 +413,10 @@ export default function RunSelector({
               {isLaunching
                 ? 'Despachando workflow...'
                 : selectedTestIds.length === 0
-                ? 'Selecciona al menos 1 test'
-                : selectedSuites.length > 1
-                ? `Lanzar ${selectedTestIds.length} tests (${selectedSuites.length} suites)`
-                : `Lanzar ${selectedTestIds.length} ${selectedTestIds.length === 1 ? 'test' : 'tests'}`}
+                  ? 'Selecciona al menos 1 test'
+                  : selectedSuites.length > 1
+                    ? `Lanzar ${selectedTestIds.length} tests (${selectedSuites.length} suites)`
+                    : `Lanzar ${selectedTestIds.length} ${selectedTestIds.length === 1 ? 'test' : 'tests'}`}
             </button>
           </div>
         </div>
