@@ -220,7 +220,46 @@ player_mad, blocked, sinequipo.
    anteriores.
    Gotcha de Storage: tras borrar un fichero, su enlace firmado puede seguir sirviéndose desde la
    CDN hasta ~60 s. Para comprobar el borrado se pide un enlace nuevo al servidor (TC-I02).
-   Después: Cucumber (C y E en Given/When/Then),
+   CUCUMBER: HECHO 20-nov (repo qa-cucumber).
+   - Cucumber-JS 13 + Playwright como motor (el repo venía así).
+   - Gherkin en español (# language: es); las 9 suites, 70 escenarios y 611 pasos: 70/70 contra
+     el demo en 3 min 16 s.
+   - Page object copiado de qa-playwright y pasos en español en src/steps; los usuarios se
+     nombran como en la app ("QA Junta 2").
+   - Usa Esquema del escenario con Ejemplos (C05/C06, E04/E05) y tablas de datos (A01, E01, H03).
+   - ts-node se cambió por tsx: TypeScript 7 (la versión en Go) ya no expone el compilador en JS.
+     tsconfig con module/moduleResolution nodenext (TS 7 eliminó node10).
+   - Reset por suite en un hook Before cuando cambia la carpeta de la feature.
+   - run.sh: SUITE (varias) + GREP (regex anclada de nombres para --name).
+   - En la web: herramienta 'cucumber' (front); el lector de tests entiende .feature y expande
+     los Esquemas.
+   - PENDIENTE: faltan 2 secretos en el repo (SUPABASE_SERVICE_KEY y TARGET_BASE_URL); después
+     validar en CI y live_execution=true.
+   CYPRESS: HECHO 20-nov (repo qa-cypress, creado con gh).
+   - Cypress 16.3 + TypeScript 5: Cypress compila TS con el compilador en JS y TS 7 no lo trae.
+   - Las 9 suites, 70/70 contra el demo en 4 min.
+   - El contador de red se inyecta en window:before:load; reset con cy.task.
+   - TC-D05 con cy.intercept + res.setDelay(1500): la respuesta llega a la app a los 1,5 s de
+     recibirla Cypress (medir con Date.now() + ms).
+   - TC-I02 lee la apikey de las cabeceras con cy.intercept; el PDF se sube con selectFile.
+   - Cypress 16: los secretos van por cy.env([...]) (la contraseña QA) y lo público por
+     Cypress.expose (el filtro grep).
+   - Capturas PNG convertidas a JPEG en after:screenshot (pngjs + jpeg-js).
+   - Gotchas:
+     - el título de una ficha bloqueada sale "Nombre  [BLOQUEADO]" (dos espacios): normalizar;
+     - la app rellena el título del PDF con el nombre del fichero, así que se sube con el
+       título como nombre (escribir encima justo después fallaba a veces).
+   - CI: ubuntu-latest + caché de ~/.cache/Cypress. En la web: herramienta 'cypress' (front);
+     el lector de tests reconoce .cy.ts.
+   - PENDIENTE: los 6 secretos del repo y, si el token de la web tiene una lista fija de repos,
+     añadirle qa-cypress; después validar en CI y live_execution=true.
+   MENÚ DE LA WEB: se genera desde la tabla tools, con un desplegable por category ('front' =
+   Web E2E, 'api', 'mobile', 'performance'); las herramientas sin live_execution salen como
+   "Pronto". Una herramienta nueva aparece sola al darla de alta.
+   RAMAS: otra sesión rediseñó la web en wip/diseno-talmo y se fusionó en main el 20-nov. Para no
+   pisarse, los cambios de la web se hacen en un worktree aparte (../ivan-qa-lab-web-main,
+   rama main-integracion, push a main).
+   Después: Newman/Bruno/Karate (API) y Appium (móvil),
    Newman/Bruno/Karate (suite D y comprobación de RLS por API), Appium al final (resultados pregrabados).
 6. Solo cuando las herramientas funcionen: la web (home, página de herramienta con selector y botón
    Lanzar, pantalla en vivo con Realtime, resultados con métricas), Turnstile, ping keep-alive
