@@ -4,11 +4,13 @@ import { dispatchWorkflow } from "@/lib/github/dispatch";
 
 const MAX_RUNS_PER_IP_PER_HOUR = 3;
 const MAX_RUNS_PER_DAY = 50;
+const MAX_STORED_RUNS_PER_TOOL = 4;
 const SLUG = /^[a-z0-9-]{1,40}$/;
 
 type SuiteRow = {
   id: string;
   slug: string;
+  tool_id: string;
   tools: {
     slug: string;
     github_repo: string;
@@ -29,6 +31,49 @@ function clientIpHash(request: Request): string {
   return createHash("sha256").update(`${process.env.IP_SALT ?? ""}:${ip}`).digest("hex");
 }
 
+async function pruneOldRunsForTool(db: ReturnType<typeof getAdminClient>, toolId: string) {
+  const { data: toolSuites } = await db
+    .from("suites")
+    .select("id")
+    .eq("tool_id", toolId);
+
+  const suiteIds = (toolSuites ?? []).map((s) => s.id);
+  if (suiteIds.length === 0) return;
+
+  const { data: toolRuns } = await db
+    .from("runs")
+    .select("id")
+    .in("suite_id", suiteIds)
+    .order("created_at", { ascending: false });
+
+  if (!toolRuns || toolRuns.length <= MAX_STORED_RUNS_PER_TOOL) return;
+
+  const idsToDelete = toolRuns.slice(MAX_STORED_RUNS_PER_TOOL).map((r) => r.id);
+
+  // 1. Limpiar capturas del bucket 'evidence' asociadas a esas runs
+  for (const oldRunId of idsToDelete) {
+    try {
+      const { data: files } = await db.storage.from("evidence").list(oldRunId);
+      if (files && files.length > 0) {
+        const paths = files.map((f) => `${oldRunId}/${f.name}`);
+        await db.storage.from("evidence").remove(paths);
+      }
+    } catch {
+      // Ignorar si no existen evidencias en storage para esa run
+    }
+  }
+
+  // 2. Eliminar registros relacionados y las runs antiguas
+  await Promise.all([
+    db.from("run_events").delete().in("run_id", idsToDelete),
+    db.from("test_results").delete().in("run_id", idsToDelete),
+    db.from("run_summary").delete().in("run_id", idsToDelete),
+    db.from("run_requests").delete().in("run_id", idsToDelete),
+  ]);
+
+  await db.from("runs").delete().in("id", idsToDelete);
+}
+
 export async function POST(request: Request) {
   let body: unknown;
   try {
@@ -37,29 +82,10 @@ export async function POST(request: Request) {
     return json(400, { error: "El cuerpo debe ser JSON" });
   }
 
-  // Se añaden los campos turnstileToken y selectedTags
-  const { tool, suite, turnstileToken, selectedTags = [] } = (body ?? {}) as any;
+  const { tool, suite, selectedTags = [] } = (body ?? {}) as any;
 
   if (typeof tool !== "string" || typeof suite !== "string" || !SLUG.test(tool) || !SLUG.test(suite)) {
     return json(400, { error: "Se esperan 'tool' y 'suite' como slugs válidos" });
-  }
-
-  if (!turnstileToken) {
-    return json(400, { error: "Falta la validación del Captcha" });
-  }
-
-  // 1. Validar Turnstile
-  const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      secret: process.env.TURNSTILE_SECRET_KEY,
-      response: turnstileToken,
-    }),
-  });
-  const verifyJson = await verifyRes.json();
-  if (!verifyJson.success) {
-    return json(400, { error: "Captcha inválido" });
   }
 
   const db = getAdminClient();
@@ -71,11 +97,11 @@ export async function POST(request: Request) {
 
     const { data: row, error: suiteError } = await db
       .from("suites")
-      .select("id, slug, tools!inner(slug, github_repo, workflow_file, enabled, live_execution)")
+      .select("id, slug, tool_id, tools!inner(slug, github_repo, workflow_file, enabled, live_execution)")
       .eq("slug", suite)
       .eq("tools.slug", tool)
       .maybeSingle<SuiteRow>();
-    
+
     if (suiteError) throw suiteError;
     if (!row) return json(404, { error: "Suite no encontrada" });
     if (!row.tools.enabled || !row.tools.live_execution) {
@@ -89,7 +115,7 @@ export async function POST(request: Request) {
       db.from("run_requests").select("run_id", { count: "exact", head: true })
         .gte("created_at", since(86_400_000)),
     ]);
-    
+
     if (perIp.error) throw perIp.error;
     if (perDay.error) throw perDay.error;
     if ((perIp.count ?? 0) >= MAX_RUNS_PER_IP_PER_HOUR) {
@@ -114,7 +140,7 @@ export async function POST(request: Request) {
       .insert({ suite_id: row.id })
       .select("id")
       .single<{ id: string }>();
-      
+
     if (runError) {
       if (runError.code === "23505") {
         return json(409, { error: "Ya hay una ejecución en curso; inténtalo en unos minutos" }, { "Retry-After": "60" });
@@ -126,12 +152,11 @@ export async function POST(request: Request) {
     if (reqError) throw reqError;
 
     try {
-      const grepFilter = Array.isArray(selectedTags) && selectedTags.length > 0 ? selectedTags.join('|') : '';
-      
+      const grepFilter = Array.isArray(selectedTags) && selectedTags.length > 0 ? selectedTags.join("|") : "";
+
       await dispatchWorkflow({
         repo: row.tools.github_repo,
         workflowFile: row.tools.workflow_file,
-        // Se añade 'grep' a los inputs para que GitHub Actions lo reciba
         inputs: { run_id: run.id, suite: row.slug, grep: grepFilter },
       });
     } catch (e) {
@@ -142,6 +167,9 @@ export async function POST(request: Request) {
       await db.from("run_requests").delete().eq("run_id", run.id);
       return json(502, { error: "No se pudo lanzar la ejecución", run_id: run.id });
     }
+
+    // Mantener únicamente las últimas 4 runs de esta herramienta
+    await pruneOldRunsForTool(db, row.tool_id);
 
     return json(201, { run_id: run.id });
   } catch (e) {
