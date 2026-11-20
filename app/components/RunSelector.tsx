@@ -66,13 +66,9 @@ export default function RunSelector({
 
   // Busca solo por nombre/ID del escenario o @tag (sin coincidir con rutas internas como rbac.spec.ts)
   const visibleTests = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
+    const q = searchQuery.trim();
     if (q) {
-      return allTests.filter(
-        (t) =>
-          t.name.toLowerCase().includes(q) ||
-          t.tag?.toLowerCase().includes(q)
-      );
+      return allTests.filter((t) => t.name.includes(q));
     }
 
     if (!hasSuiteMapping || activeSuiteSlug === 'all') return allTests;
@@ -345,7 +341,7 @@ export default function RunSelector({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por código (ej. TC-B), título o @tag..."
+              placeholder="Buscar por código (ej. TC-B, SMOKE) o título (distingue mayúsculas)..."
               className="w-full px-4 py-2.5 rounded-2xl bg-[var(--bg-surface-muted)] border border-[var(--border-subtle)] text-sm focus:outline-none focus:border-[var(--text-primary)]"
             />
           )}
