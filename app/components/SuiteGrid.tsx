@@ -119,8 +119,8 @@ export default async function SuiteGrid() {
 
       <div className="overflow-x-auto">
         <div
-          className="grid gap-2 min-w-[720px] items-center"
-          style={{ gridTemplateColumns: `140px repeat(${columns.length}, minmax(0, 1fr))` }}
+          className="grid gap-1.5 min-w-[620px] items-center"
+          style={{ gridTemplateColumns: `136px repeat(${columns.length}, minmax(0, 1fr))` }}
         >
           <span />
           {columns.map(([letter, name]) => (

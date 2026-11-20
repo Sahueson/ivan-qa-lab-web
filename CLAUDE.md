@@ -287,7 +287,9 @@ La web ya copia: cabecera con navegación en píldora, modo noche, botón negro 
   solo C y E). Usa las últimas 80 runs; se guardan 4 por herramienta, así que muchas celdas salen "sin ejecutar".
 - PENDIENTE, por orden: (1) gráficos de área/barras grises (última barra en negro) en la página de resultados;
   (2) buscador ⌘K en la cabecera (opcional).
-- PENDIENTE de revisión de maquetación: hueco en la tarjeta "Motores" de la home, anchos de contenedor distintos entre
+- HECHO 20-nov: hueco de "Motores" resuelto: el mapa de suites va en la columna izquierda bajo los motores y el panel negro
+  queda a la derecha con `items-start`.
+- PENDIENTE de revisión de maquetación: anchos de contenedor distintos entre
   páginas (home 7xl vs herramienta ~780 px), scroll interno en la lista de escenarios, contraste de textos secundarios,
   etiquetas de estado en inglés/mayúsculas, texto "Configurar tags y lanzar" (ya no hay tags), "Estabilidad 50%" por los
   fallos de i-normas en Selenium Python.
