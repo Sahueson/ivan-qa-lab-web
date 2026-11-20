@@ -3,7 +3,8 @@ import { useState, useMemo, useEffect } from 'react';
 
 const TIEMPO_FIJO = 39;
 const TIEMPO_PREP = 21;
-const SUT_DEV_URL = 'https://tactical-calendar-dev.vercel.app/';
+const SUT_DEV_URL =
+  process.env.NEXT_PUBLIC_SUT_DEV_URL || 'https://tactical-calendar-dev.vercel.app/';
 const ACCESS_MAILTO =
   'mailto:ivancabanillas93@gmail.com?subject=Solicitud%20de%20acceso%20-%20Tactical%20Calendar%20(QA%20Lab)&body=Hola%20Iv%C3%A1n%2C%0A%0AHe%20estado%20probando%20Ivan%20QA%20Lab%20y%20me%20gustar%C3%ADa%20solicitar%20un%20usuario%20de%20prueba%20para%20explorar%20Tactical%20Calendar%20en%20el%20entorno%20dev.%0A%0AUn%20saludo.';
 
@@ -63,16 +64,14 @@ export default function RunSelector({
     [allTests]
   );
 
-  // Tests de la pestaña de suite activa (o todos si se busca globalmente)
+  // Busca solo por nombre/ID del escenario o @tag (sin coincidir con rutas internas como rbac.spec.ts)
   const visibleTests = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (q) {
       return allTests.filter(
         (t) =>
           t.name.toLowerCase().includes(q) ||
-          t.filePath?.toLowerCase().includes(q) ||
-          t.tag?.toLowerCase().includes(q) ||
-          t.suiteSlug?.toLowerCase().includes(q)
+          t.tag?.toLowerCase().includes(q)
       );
     }
 
@@ -80,7 +79,6 @@ export default function RunSelector({
     return allTests.filter((t) => t.suiteSlug === activeSuiteSlug);
   }, [allTests, activeSuiteSlug, hasSuiteMapping, searchQuery]);
 
-  // Cuántas suites distintas tienen al menos un test marcado
   const selectedSuites = useMemo(() => {
     const set = new Set<string>();
     for (const t of allTests) {
@@ -97,7 +95,6 @@ export default function RunSelector({
     );
   };
 
-  // Marcar o desmarcar todos los tests de la suite que estás viendo ahora
   const toggleVisibleSuite = () => {
     const visibleIds = visibleTests.map((t) => t.id);
     const allVisibleSelected =
@@ -110,7 +107,6 @@ export default function RunSelector({
     }
   };
 
-  // Marcar o desmarcar absolutamente todos los tests de todas las suites
   const toggleAllSuites = () => {
     if (selectedTestIds.length === allTests.length && allTests.length > 0) {
       setSelectedTestIds([]);
@@ -119,7 +115,6 @@ export default function RunSelector({
     }
   };
 
-  // Si no hay nada marcado, el tiempo es 0s
   const estimatedTime = useMemo(() => {
     if (selectedTestIds.length === 0) return 0;
     const sum = allTests
@@ -205,7 +200,6 @@ export default function RunSelector({
 
       {/* Tarjeta principal del Selector */}
       <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6 sm:p-8 space-y-6">
-        {/* Selector de lenguaje (Python / Java) cuando aplica */}
         {variants && variants.length > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-3 pb-6 border-b border-[var(--border-subtle)]">
             <div>
@@ -223,10 +217,11 @@ export default function RunSelector({
                     key={v.id}
                     type="button"
                     onClick={() => setActiveToolSlug(v.slug)}
-                    className={`px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${isSelected
+                    className={`px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
+                      isSelected
                         ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs'
                         : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                      }`}
+                    }`}
                   >
                     {v.label}
                   </button>
@@ -253,10 +248,11 @@ export default function RunSelector({
                 <button
                   type="button"
                   onClick={toggleAllSuites}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition cursor-pointer ${allGlobalSelected
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition cursor-pointer ${
+                    allGlobalSelected
                       ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] border-transparent'
                       : 'bg-[var(--bg-surface-muted)] border-[var(--border-subtle)] hover:border-[var(--text-primary)]'
-                    }`}
+                  }`}
                 >
                   {allGlobalSelected
                     ? `Desmarcar todas (${allTests.length} tests)`
@@ -279,20 +275,22 @@ export default function RunSelector({
                       setActiveSuiteSlug(s.slug);
                       setSearchQuery('');
                     }}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition cursor-pointer inline-flex items-center gap-2 ${isViewing
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition cursor-pointer inline-flex items-center gap-2 ${
+                      isViewing
                         ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] border-transparent'
                         : selectedInSuite > 0
-                          ? 'bg-[var(--bg-surface-muted)] border-[var(--text-primary)] text-[var(--text-primary)]'
-                          : 'bg-[var(--bg-surface-muted)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                      }`}
+                        ? 'bg-[var(--bg-surface-muted)] border-[var(--text-primary)] text-[var(--text-primary)]'
+                        : 'bg-[var(--bg-surface-muted)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    }`}
                   >
                     <span>{s.name}</span>
                     {suiteTests.length > 0 && (
                       <span
-                        className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${selectedInSuite > 0
+                        className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                          selectedInSuite > 0
                             ? 'bg-emerald-500/20 text-emerald-500 font-semibold'
                             : 'opacity-60'
-                          }`}
+                        }`}
                       >
                         {selectedInSuite > 0 ? `${selectedInSuite}/${suiteTests.length}` : suiteTests.length}
                       </span>
@@ -347,7 +345,7 @@ export default function RunSelector({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar en todas las suites por nombre, archivo o @tag..."
+              placeholder="Buscar por código (ej. TC-B), título o @tag..."
               className="w-full px-4 py-2.5 rounded-2xl bg-[var(--bg-surface-muted)] border border-[var(--border-subtle)] text-sm focus:outline-none focus:border-[var(--text-primary)]"
             />
           )}
@@ -366,10 +364,11 @@ export default function RunSelector({
                 return (
                   <label
                     key={test.id}
-                    className={`flex items-center justify-between p-3.5 rounded-2xl border cursor-pointer transition ${checked
+                    className={`flex items-center justify-between p-3.5 rounded-2xl border cursor-pointer transition ${
+                      checked
                         ? 'bg-[var(--bg-surface-muted)] border-[var(--text-primary)]'
                         : 'border-[var(--border-subtle)] hover:bg-[var(--bg-surface-muted)]/60'
-                      }`}
+                    }`}
                   >
                     <div className="flex items-center gap-3.5 min-w-0 pr-3">
                       <input
@@ -413,10 +412,10 @@ export default function RunSelector({
               {isLaunching
                 ? 'Despachando workflow...'
                 : selectedTestIds.length === 0
-                  ? 'Selecciona al menos 1 test'
-                  : selectedSuites.length > 1
-                    ? `Lanzar ${selectedTestIds.length} tests (${selectedSuites.length} suites)`
-                    : `Lanzar ${selectedTestIds.length} ${selectedTestIds.length === 1 ? 'test' : 'tests'}`}
+                ? 'Selecciona al menos 1 test'
+                : selectedSuites.length > 1
+                ? `Lanzar ${selectedTestIds.length} tests (${selectedSuites.length} suites)`
+                : `Lanzar ${selectedTestIds.length} ${selectedTestIds.length === 1 ? 'test' : 'tests'}`}
             </button>
           </div>
         </div>
