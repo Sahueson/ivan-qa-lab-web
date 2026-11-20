@@ -41,16 +41,16 @@ export default function Navbar() {
     <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-[var(--bg-canvas)]/85">
       <div className="max-w-7xl mx-auto px-4 sm:px-8 h-20 flex items-center justify-between gap-4">
         {/* Marca izquierda con tu foto circular */}
-        <Link href="/" className="flex items-center gap-3 shrink-0 group">
+        <Link href="/" className="flex items-center gap-3.5 shrink-0">
           {!avatarError ? (
             <img
               src="/avatar.jpg"
               alt="Iván Cabanillas"
               onError={() => setAvatarError(true)}
-              className="w-10 h-10 rounded-full object-cover border border-[var(--border-subtle)] group-hover:scale-105 transition"
+              className="w-14 h-14 rounded-full object-cover object-top border border-[var(--border-subtle)]"
             />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] flex items-center justify-center font-bold text-sm tracking-tighter">
+            <div className="w-14 h-14 rounded-full bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] flex items-center justify-center font-bold text-base tracking-tighter">
               QA
             </div>
           )}
