@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import './globals.css';
 import { ThemeProvider } from './components/ThemeProvider';
-import Navbar from './components/Navbar';
+import NavbarServer from './components/NavbarServer';
 
 export const metadata: Metadata = {
   title: 'Ivan QA Lab — Automation Studio',
@@ -15,7 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen antialiased selection:bg-neutral-800 selection:text-white">
         <ThemeProvider>
           <Suspense fallback={<div className="h-20" />}>
-            <Navbar />
+            <NavbarServer />
           </Suspense>
           {children}
         </ThemeProvider>

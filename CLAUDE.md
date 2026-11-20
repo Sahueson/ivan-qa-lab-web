@@ -269,3 +269,30 @@ player_mad, blocked, sinequipo.
 - Formato de resultados común (shared/schema): tool, target, suite, started_at, finished_at,
   duration_ms, summary{total,passed,failed,skipped}, tests[{name,status,duration_ms,role,error,evidence_url}].
 - Pegar heredocs largos en el terminal corrompe archivos: mejor que Claude Code los escriba directamente.
+## Rediseño de la web (referencia visual "Talmo", vídeo de @_code_and_chill_, visto 20-nov)
+Rama de trabajo: `wip/diseno-talmo` (un commit por cambio que funciona; subir siempre para poder seguir desde otro equipo).
+Estilo de la referencia: fondo off-white, tarjetas blancas con borde fino y esquinas 16-24 px, negro puro como único acento
+(estado activo, tarjeta destacada, panel de detalle), sin sombras, pastillas monocromas; el color solo en puntos de estado.
+La web ya copia: cabecera con navegación en píldora, modo noche, botón negro "+ Nuevo Run", tarjeta KPI negra.
+- HECHO 20-nov: sparkline blanca de tasa de éxito acumulada en la tarjeta negra de la home (app/page.tsx, SVG puro).
+- HECHO 20-nov: Toast negro abajo en el centro (app/components/Toast.tsx + @keyframes toast-in en globals.css), usado para
+  los errores de lanzamiento en RunSelector (409 ocupado, 429 límite, etc.). Tras un 201 la página navega a /runs/<id>, así
+  que ahí no hay toast.
+- HECHO 20-nov: panel negro "Último run" en la home (LastRunPanel en app/page.tsx): tarjeta interior con estado, fecha,
+  tests y botón "Ver resultados"/"Ver en vivo", y lista de anteriores con punto de color. Sustituye a "Actividad reciente".
+  Pide run_summary(total, passed, failed, duration_ms) en la consulta de runs. Un único `any` previo sigue en el mapeo de tools.
+- HECHO 20-nov: "Mapa de suites" (app/components/SuiteGrid.tsx, debajo de los motores en la home): filas = herramientas,
+  columnas = letra de la suite (A–I). Celda = último run de esa pareja: píldora negra si superado (✓ p/t), blanca con punto
+  ámbar (con fallos) o rojo (fallido), punteada si nunca se ha lanzado, "·" si la herramienta no tiene esa suite (Cucumber
+  solo C y E). Usa las últimas 80 runs; se guardan 4 por herramienta, así que muchas celdas salen "sin ejecutar".
+- PENDIENTE, por orden: (1) gráficos de área/barras grises (última barra en negro) en la página de resultados;
+  (2) buscador ⌘K en la cabecera (opcional).
+- HECHO 20-nov: hueco de "Motores" resuelto: el mapa de suites va en la columna izquierda bajo los motores y el panel negro
+  queda a la derecha con `items-start`.
+- PENDIENTE de revisión de maquetación: anchos de contenedor distintos entre
+  páginas (home 7xl vs herramienta ~780 px), scroll interno en la lista de escenarios, contraste de textos secundarios,
+  etiquetas de estado en inglés/mayúsculas, texto "Configurar tags y lanzar" (ya no hay tags), "Estabilidad 50%" por los
+  fallos de i-normas en Selenium Python.
+- Verificación visual: Claude in Chrome (extensión) funciona; el dev server (`next dev -p 3100`) debe reiniciarse si Tailwind
+  deja de generar clases (síntoma: página negra sin estilos). Para probar errores sin lanzar un run real, sustituir
+  `window.fetch` por un stub que devuelva 409 para POST /api/runs.
