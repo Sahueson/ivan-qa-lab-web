@@ -1,11 +1,9 @@
 'use client';
 import { useState, useMemo } from 'react';
-import Turnstile from 'react-turnstile';
 
 const AVAILABLE_TESTS = [
   { id: 'TC-A01', name: 'Login válido', duration: 3.2, tags: ['@login'] },
   { id: 'TC-B02', name: 'Crear partida', duration: 4.5, tags: ['@eventos'] },
-  // Amplía esta lista según los tags de tus herramientas
 ];
 
 const TIEMPO_FIJO = 39;
@@ -13,7 +11,6 @@ const TIEMPO_PREP = 21;
 
 export default function RunSelector({ toolSlug, suiteSlug }: { toolSlug: string, suiteSlug: string }) {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [isLaunching, setIsLaunching] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -30,7 +27,6 @@ export default function RunSelector({ toolSlug, suiteSlug }: { toolSlug: string,
   }, [selectedTags]);
 
   const handleLaunch = async () => {
-    if (!turnstileToken) return;
     setIsLaunching(true);
     setErrorMsg(null);
     
@@ -41,8 +37,7 @@ export default function RunSelector({ toolSlug, suiteSlug }: { toolSlug: string,
         body: JSON.stringify({
           tool: toolSlug,
           suite: suiteSlug,
-          selectedTags,
-          turnstileToken
+          selectedTags
         })
       });
       
@@ -82,17 +77,12 @@ export default function RunSelector({ toolSlug, suiteSlug }: { toolSlug: string,
         <p className="text-lg">
           Tiempo estimado: <strong>~{Math.round(estimatedTime)}s</strong>
         </p>
-        
-        <Turnstile
-          sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
-          onVerify={(token) => setTurnstileToken(token)}
-        />
 
         {errorMsg && <p className="text-red-600">{errorMsg}</p>}
 
         <button 
           onClick={handleLaunch}
-          disabled={selectedTags.length === 0 || !turnstileToken || isLaunching}
+          disabled={selectedTags.length === 0 || isLaunching}
           className="bg-black text-white px-6 py-2 rounded font-medium disabled:opacity-50"
         >
           {isLaunching ? 'Lanzando...' : 'Lanzar Tests'}

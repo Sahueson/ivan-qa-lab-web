@@ -1,8 +1,5 @@
 import RunSelector from '@/app/components/RunSelector';
 
-// Le dice a Next.js que esta ruta se renderiza en tiempo real, no en el build estático
-export const dynamic = 'force-dynamic';
-
 export default async function ToolPage({ params }: { params: Promise<{ tool: string }> }) {
   const resolvedParams = await params;
   const toolSlug = resolvedParams.tool;
