@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { label: 'Studio', href: '/' },
   { label: 'Playwright', href: '/playwright' },
   { label: 'Selenium', href: '/selenium' },
+  { label: 'Cucumber', href: '/cucumber' },
   { label: 'About me', href: '/about' },
 ];
 
@@ -16,6 +17,7 @@ const RUN_OPTIONS = [
   { label: 'Playwright', sub: 'TypeScript E2E', href: '/playwright' },
   { label: 'Selenium · Python', sub: 'WebDriver Python', href: '/selenium-python' },
   { label: 'Selenium · Java', sub: 'WebDriver Java', href: '/selenium-java' },
+  { label: 'Cucumber', sub: 'BDD · Gherkin en español', href: '/cucumber' },
 ];
 
 export default function Navbar() {
