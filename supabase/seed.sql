@@ -40,8 +40,8 @@ select t.id, s.target_id, s.slug, s.name, s.description, s.estimated_seconds + 1
 from tools t, suites s join tools pw on pw.id = s.tool_id and pw.slug = 'playwright'
 where t.slug in ('selenium-java', 'selenium-python');
 
--- Cucumber: BDD en Gherkin en español (Cucumber-JS) ejecutado con Playwright. Suites C y E, con
--- los mismos casos que Playwright. live_execution pasa a true cuando qa-cucumber tiene sus secretos.
+-- Cucumber: BDD en Gherkin en español (Cucumber-JS) ejecutado con Playwright. Las 9 suites, con
+-- los mismos 70 casos que Playwright. live_execution pasa a true cuando qa-cucumber tiene sus secretos.
 insert into tools (slug, name, category, description, github_repo, workflow_file, enabled, live_execution) values
   ('cucumber', 'Cucumber', 'front',
    'BDD: escenarios en Gherkin en español (Cucumber-JS) ejecutados con Playwright. Mismos casos que Playwright y Selenium.',
@@ -50,7 +50,7 @@ insert into tools (slug, name, category, description, github_repo, workflow_file
 insert into suites (tool_id, target_id, slug, name, description, estimated_seconds)
 select t.id, s.target_id, s.slug, s.name, s.description, s.estimated_seconds
 from tools t, suites s join tools pw on pw.id = s.tool_id and pw.slug = 'playwright'
-where t.slug = 'cucumber' and s.slug in ('c-inscripciones', 'e-gobernanza');
+where t.slug = 'cucumber';
 
 -- Cypress: las 9 suites, mismos 70 casos que Playwright (tiempo = el de Playwright en CI + 15 s).
 -- live_execution pasa a true cuando qa-cypress tiene sus secretos y ha pasado en CI.
