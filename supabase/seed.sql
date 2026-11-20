@@ -52,13 +52,14 @@ select t.id, s.target_id, s.slug, s.name, s.description, s.estimated_seconds
 from tools t, suites s join tools pw on pw.id = s.tool_id and pw.slug = 'playwright'
 where t.slug = 'cucumber' and s.slug in ('c-inscripciones', 'e-gobernanza');
 
--- Cypress (en construcción: suite A). live_execution pasa a true cuando qa-cypress tiene repo y secretos.
+-- Cypress: las 9 suites, mismos 70 casos que Playwright (tiempo = el de Playwright en CI + 15 s).
+-- live_execution pasa a true cuando qa-cypress tiene sus secretos y ha pasado en CI.
 insert into tools (slug, name, category, description, github_repo, workflow_file, enabled, live_execution) values
   ('cypress', 'Cypress', 'front',
    'E2E que corre dentro del navegador, con TypeScript. Mismos casos que Playwright y Selenium.',
    'Sahueson/qa-cypress', 'run-tests.yml', true, false);
 
 insert into suites (tool_id, target_id, slug, name, description, estimated_seconds)
-select t.id, s.target_id, s.slug, s.name, s.description, s.estimated_seconds
+select t.id, s.target_id, s.slug, s.name, s.description, s.estimated_seconds + 15
 from tools t, suites s join tools pw on pw.id = s.tool_id and pw.slug = 'playwright'
-where t.slug = 'cypress' and s.slug = 'a-auth';
+where t.slug = 'cypress';
