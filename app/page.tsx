@@ -36,12 +36,116 @@ function Sparkline({ statuses }: { statuses: string[] }) {
   );
 }
 
+type RunSummary = { total: number; passed: number; failed: number; duration_ms: number };
+type RunRow = {
+  id: string;
+  status: string;
+  created_at: string;
+  suites?: { slug?: string; tools?: { name?: string; slug?: string } | null } | null;
+  run_summary?: RunSummary | RunSummary[] | null;
+};
+
+const runSummary = (run: RunRow): RunSummary | null | undefined => (Array.isArray(run.run_summary) ? run.run_summary[0] : run.run_summary);
+
+const runLabel = (run: RunRow) => {
+  const summary = runSummary(run);
+  if (run.status === 'finished') return summary && summary.failed > 0 ? 'Con fallos' : 'Superado';
+  if (run.status === 'failed') return 'Fallido';
+  return 'En curso';
+};
+
+const runDot = (run: RunRow) => {
+  const summary = runSummary(run);
+  if (run.status === 'finished') return summary && summary.failed > 0 ? 'bg-amber-400' : 'bg-emerald-400';
+  if (run.status === 'failed') return 'bg-red-400';
+  return 'bg-sky-400 animate-pulse';
+};
+
+const runHref = (run: RunRow) => (run.status === 'finished' ? `/runs/${run.id}/results` : `/runs/${run.id}`);
+
+const runWhen = (iso: string) =>
+  new Date(iso).toLocaleString('es-ES', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Europe/Madrid',
+  });
+
+function LastRunPanel({ runs }: { runs: RunRow[] }) {
+  const [last, ...previous] = runs;
+  const lastSummary = last ? runSummary(last) : null;
+
+  return (
+    <div className="rounded-[24px] bg-[var(--bg-hero)] text-[var(--text-hero)] border border-[var(--border-subtle)] p-6 flex flex-col gap-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold">Último run</h2>
+          <p className="text-xs opacity-60">Lo más reciente en el pipeline</p>
+        </div>
+        {last && <span className={`w-2.5 h-2.5 rounded-full ${runDot(last)}`} aria-hidden />}
+      </div>
+
+      {!last ? (
+        <p className="text-xs opacity-60 py-8 text-center">Aún no hay ejecuciones registradas.</p>
+      ) : (
+        <>
+          <div className="rounded-2xl bg-white/5 border border-white/10 p-4 space-y-3">
+            <p className="text-xs opacity-60">{runLabel(last)} · {runWhen(last.created_at)}</p>
+            <p className="text-xl font-semibold tracking-tight leading-tight">
+              {last.suites?.tools?.name || 'Suite'} · {last.suites?.slug || 'run'}
+            </p>
+            {lastSummary && (
+              <p className="text-xs opacity-70">
+                {lastSummary.passed}/{lastSummary.total} tests · {Math.round(lastSummary.duration_ms / 1000)} s
+              </p>
+            )}
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-xs font-mono opacity-50">{last.id.slice(0, 8)}</span>
+              <Link
+                href={runHref(last)}
+                className="px-4 py-1.5 rounded-full bg-white text-[#141413] text-xs font-semibold hover:opacity-90 transition"
+              >
+                {last.status === 'finished' || last.status === 'failed' ? 'Ver resultados' : 'Ver en vivo'}
+              </Link>
+            </div>
+          </div>
+
+          {previous.length > 0 && (
+            <div>
+              <p className="text-xs opacity-60 mb-2">Anteriores</p>
+              <div className="divide-y divide-white/10">
+                {previous.slice(0, 4).map((run) => (
+                  <Link key={run.id} href={runHref(run)} className="flex items-center gap-3 py-2.5 hover:opacity-80 transition">
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${runDot(run)}`} aria-hidden />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm truncate">
+                        {run.suites?.tools?.name || 'Suite'} · {run.suites?.slug || 'run'}
+                      </p>
+                      <p className="text-xs opacity-50">{runLabel(run)} · {runWhen(run.created_at)}</p>
+                    </div>
+                    <span className="opacity-40" aria-hidden>›</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 async function StudioDashboard() {
   const db = getAdminClient();
 
   const [toolsRes, runsRes] = await Promise.all([
     db.from('tools').select('*').order('name', { ascending: true }),
-    db.from('runs').select('id, status, created_at, suites(slug, tools(name, slug))').order('created_at', { ascending: false }).limit(6),
+    db
+      .from('runs')
+      .select('id, status, created_at, suites(slug, tools(name, slug)), run_summary(total, passed, failed, duration_ms)')
+      .order('created_at', { ascending: false })
+      .limit(6),
   ]);
 
   const tools = toolsRes.data || [];
@@ -140,49 +244,8 @@ async function StudioDashboard() {
           </div>
         </div>
 
-        {/* Panel derecho estilo "Next up" */}
-        <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6 flex flex-col justify-between">
-          <div>
-            <h2 className="text-lg font-semibold mb-1">Actividad reciente</h2>
-            <p className="text-xs text-[var(--text-secondary)] mb-5">Últimas ejecuciones disparadas</p>
-
-            <div className="space-y-3">
-              {recentRuns.length === 0 ? (
-                <p className="text-xs text-[var(--text-secondary)] py-8 text-center">
-                  Aún no hay ejecuciones registradas.
-                </p>
-              ) : (
-                recentRuns.map((run: any) => (
-                  <Link
-                    key={run.id}
-                    href={run.status === 'finished' ? `/runs/${run.id}/results` : `/runs/${run.id}`}
-                    className="flex items-center justify-between p-3 rounded-2xl bg-[var(--bg-surface-muted)] hover:opacity-80 transition"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {run.suites?.tools?.name || 'Suite'} · {run.suites?.slug || 'run'}
-                      </p>
-                      <p className="text-xs text-[var(--text-secondary)] font-mono truncate">
-                        {run.id.slice(0, 8)}...
-                      </p>
-                    </div>
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase shrink-0 ${
-                        run.status === 'finished'
-                          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                          : run.status === 'failed'
-                          ? 'bg-red-500/15 text-red-600 dark:text-red-400'
-                          : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
-                      }`}
-                    >
-                      {run.status}
-                    </span>
-                  </Link>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
+        {/* Panel negro estilo "Next up": último run destacado + anteriores */}
+        <LastRunPanel runs={recentRuns as unknown as RunRow[]} />
       </div>
     </div>
   );

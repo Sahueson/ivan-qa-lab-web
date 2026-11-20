@@ -278,9 +278,11 @@ La web ya copia: cabecera con navegación en píldora, modo noche, botón negro 
 - HECHO 20-nov: Toast negro abajo en el centro (app/components/Toast.tsx + @keyframes toast-in en globals.css), usado para
   los errores de lanzamiento en RunSelector (409 ocupado, 429 límite, etc.). Tras un 201 la página navega a /runs/<id>, así
   que ahí no hay toast.
-- PENDIENTE, por orden: (1) panel negro "Último run / Run en vivo" en la home, con tarjeta interior y acciones;
-  (2) cuadrícula suites × herramientas con píldoras negras/blancas/grises según el último resultado (punto verde/rojo);
-  (3) gráficos de área/barras grises (última barra en negro) en la página de resultados; (4) buscador ⌘K en la cabecera (opcional).
+- HECHO 20-nov: panel negro "Último run" en la home (LastRunPanel en app/page.tsx): tarjeta interior con estado, fecha,
+  tests y botón "Ver resultados"/"Ver en vivo", y lista de anteriores con punto de color. Sustituye a "Actividad reciente".
+  Pide run_summary(total, passed, failed, duration_ms) en la consulta de runs. Un único `any` previo sigue en el mapeo de tools.
+- PENDIENTE, por orden: (1) cuadrícula suites × herramientas con píldoras negras/blancas/grises según el último resultado (punto verde/rojo);
+  (2) gráficos de área/barras grises (última barra en negro) en la página de resultados; (3) buscador ⌘K en la cabecera (opcional).
 - PENDIENTE de revisión de maquetación: hueco en la tarjeta "Motores" de la home, anchos de contenedor distintos entre
   páginas (home 7xl vs herramienta ~780 px), scroll interno en la lista de escenarios, contraste de textos secundarios,
   etiquetas de estado en inglés/mayúsculas, texto "Configurar tags y lanzar" (ya no hay tags), "Estabilidad 50%" por los
