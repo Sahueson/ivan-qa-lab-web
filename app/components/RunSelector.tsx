@@ -1,12 +1,19 @@
 'use client';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 
 const TIEMPO_FIJO = 39;
 const TIEMPO_PREP = 21;
 const SUT_DEV_URL =
-  process.env.NEXT_PUBLIC_SUT_DEV_URL || 'https://tactical-calendar-dev.vercel.app/';
-const ACCESS_MAILTO =
-  'mailto:ivancabanillas93@gmail.com?subject=Solicitud%20de%20acceso%20-%20Tactical%20Calendar%20(QA%20Lab)&body=Hola%20Iv%C3%A1n%2C%0A%0AHe%20estado%20probando%20Ivan%20QA%20Lab%20y%20me%20gustar%C3%ADa%20solicitar%20un%20usuario%20de%20prueba%20para%20explorar%20Tactical%20Calendar%20en%20el%20entorno%20dev.%0A%0AUn%20saludo.';
+  process.env.NEXT_PUBLIC_SUT_DEV_URL || 'https://tactical-calendar-demo-git-dev-sahueson.vercel.app/';
+
+const CONTACT_EMAIL = 'ivancabanillas93@gmail.com';
+const SUBJECT_ENCODED = encodeURIComponent('Solicitud de acceso - Tactical Calendar (QA Lab)');
+const BODY_ENCODED = encodeURIComponent(
+  'Hola Iván,\n\nHe estado probando Ivan QA Lab y me gustaría solicitar un usuario de prueba para explorar Tactical Calendar en el entorno dev.\n\nUn saludo.'
+);
+
+const GMAIL_COMPOSE_URL = `https://mail.google.com/mail/?view=cm&fs=1&to=${CONTACT_EMAIL}&su=${SUBJECT_ENCODED}&body=${BODY_ENCODED}`;
+const ACCESS_MAILTO = `mailto:${CONTACT_EMAIL}?subject=${SUBJECT_ENCODED}&body=${BODY_ENCODED}`;
 
 export type Variant = {
   id: string;
@@ -51,6 +58,33 @@ export default function RunSelector({
   const [isLaunching, setIsLaunching] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const [accessMenuOpen, setAccessMenuOpen] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState(false);
+  const accessDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (accessDropdownRef.current && !accessDropdownRef.current.contains(e.target as Node)) {
+        setAccessMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleCopyEmail = async () => {
+    try {
+      await navigator.clipboard.writeText(CONTACT_EMAIL);
+      setCopiedEmail(true);
+      setTimeout(() => {
+        setCopiedEmail(false);
+        setAccessMenuOpen(false);
+      }, 1500);
+    } catch {
+      setAccessMenuOpen(false);
+    }
+  };
+
   useEffect(() => {
     const nextSuites = suitesByTool[activeToolSlug] || [];
     setActiveSuiteSlug(nextSuites[0]?.slug || 'a-auth');
@@ -64,7 +98,7 @@ export default function RunSelector({
     [allTests]
   );
 
-  // Busca solo por nombre/ID del escenario o @tag (sin coincidir con rutas internas como rbac.spec.ts)
+  // Busca solo por nombre/ID del escenario (distingue mayúsculas y minúsculas)
   const visibleTests = useMemo(() => {
     const q = searchQuery.trim();
     if (q) {
@@ -175,12 +209,72 @@ export default function RunSelector({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-          <a
-            href={ACCESS_MAILTO}
-            className="px-4 py-2.5 rounded-full bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] text-xs font-medium hover:opacity-90 transition inline-flex items-center gap-1.5"
-          >
-            <span>Solicitar usuario</span>
-          </a>
+          <div className="relative" ref={accessDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setAccessMenuOpen((prev) => !prev)}
+              className="px-4 py-2.5 rounded-full bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] text-xs font-medium hover:opacity-90 transition inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>Solicitar usuario</span>
+              <svg
+                className={`w-3.5 h-3.5 transition-transform ${accessMenuOpen ? 'rotate-180' : ''}`}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+
+            {accessMenuOpen && (
+              <div className="absolute left-0 sm:right-0 sm:left-auto mt-2 w-64 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-lg p-1.5 z-50">
+                <a
+                  href={GMAIL_COMPOSE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setAccessMenuOpen(false)}
+                  className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-[var(--bg-surface-muted)] transition"
+                >
+                  <div>
+                    <p className="text-xs font-semibold">Abrir en Gmail</p>
+                    <p className="text-[11px] text-[var(--text-secondary)]">Redacción web directa</p>
+                  </div>
+                  <span className="text-xs text-[var(--text-secondary)]">↗</span>
+                </a>
+
+                <button
+                  type="button"
+                  onClick={handleCopyEmail}
+                  className="w-full text-left flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-[var(--bg-surface-muted)] transition cursor-pointer"
+                >
+                  <div>
+                    <p className="text-xs font-semibold">
+                      {copiedEmail ? '¡Correo copiado!' : 'Copiar dirección'}
+                    </p>
+                    <p className="text-[11px] text-[var(--text-secondary)] font-mono">
+                      {CONTACT_EMAIL}
+                    </p>
+                  </div>
+                  <span className="text-xs text-[var(--text-secondary)]">
+                    {copiedEmail ? '✓' : '⧉'}
+                  </span>
+                </button>
+
+                <a
+                  href={ACCESS_MAILTO}
+                  onClick={() => setAccessMenuOpen(false)}
+                  className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-[var(--bg-surface-muted)] transition"
+                >
+                  <div>
+                    <p className="text-xs font-semibold">App por defecto</p>
+                    <p className="text-[11px] text-[var(--text-secondary)]">Cliente local (mailto)</p>
+                  </div>
+                  <span className="text-xs text-[var(--text-secondary)]">→</span>
+                </a>
+              </div>
+            )}
+          </div>
 
           <a
             href={SUT_DEV_URL}
