@@ -81,7 +81,7 @@ async function discoverTestsFromGitHub(
         if (isCucumber) return /\.feature$/.test(f.path);
         if (isJava) return /Test\.java$/.test(f.path);
         if (isPython) return /(^|\/)test_.*\.py$|_test\.py$/.test(f.path);
-        return /\.(spec|test)\.(ts|js|tsx|jsx)$/.test(f.path);
+        return /\.(spec|test|cy)\.(ts|js|tsx|jsx)$/.test(f.path); // Playwright (.spec) y Cypress (.cy)
       })
       .slice(0, 35);
 
