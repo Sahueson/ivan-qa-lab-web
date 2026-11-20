@@ -337,15 +337,24 @@ La web ya copia: cabecera con navegación en píldora, modo noche, botón negro 
   deja de generar clases (síntoma: página negra sin estilos). Para probar errores sin lanzar un run real, sustituir
   `window.fetch` por un stub que devuelva 409 para POST /api/runs.
 
-## API y rendimiento: Newman, Bruno, Karate, JMeter (HECHO 20-nov)
-- Repos qa-newman, qa-bruno, qa-karate (`api`, suite `api`) y qa-jmeter (`performance`, suite `carga`), en GitHub bajo Sahueson.
-- Los 3 de API tienen los mismos 17 casos TC-API01..17 (RLS anónimo y visibilidad por rol sobre la API REST/Auth de Supabase del
-  staging; 11 sin login y 6 con `QA_PASSWORD`, que se omiten si falta). JMeter: PERF-01..03 (5 usuarios x 10 iteraciones, p95 contra umbral).
-- Validados en CI y por la web (POST /api/runs -> 201 -> finished): Newman 17/17, Bruno 17/17, Karate 17/17, JMeter 3/3. `live_execution=true`.
-- Alta en la base: supabase/alta-api-performance.sql (incluye la migración 20261120020000 que añade la categoría `performance`).
-  Los secretos de cada repo (6) los pone `poner-secretos.sh` (en la raíz de ivan-qa-lab, local) desde `.qa-lab.env`.
-- Gotchas: run.sh sin bit de ejecución en Windows -> el workflow usa `bash ./run.sh`; Supabase Auth devuelve 429 si se hace un login por
-  iteración (JMeter hace uno por usuario virtual); Karate 2.x (CLI) y 1.x (JAR) no usan la misma sintaxis de `match each` ni el mismo
-  directorio de informes (el conversor busca los json de forma recursiva); jmeter.bat falla con rutas con espacios en Windows: run.sh lanza el JAR.
-- PENDIENTE: lector de tests de la web para .bru, .postman_collection.json y .jmx (Karate usaría el de Gherkin); medir estimated_seconds
-  en CI (ahora 70 s api y 90 s carga, estimados); Appium (móvil) queda para cuando exista la parte móvil de la web.
+## API y rendimiento: Newman, Bruno, Karate, JMeter (HECHO 20-nov, ampliado por suites)
+- Repos qa-newman, qa-bruno, qa-karate (categoría `api`) y qa-jmeter (`performance`), en GitHub bajo Sahueson. Cada uno tiene las
+  MISMAS 9 suites que Playwright (a-auth ... i-normas, mismos nombres), así que en el Mapa de suites cada herramienta ocupa A-I
+  (antes una suite "api" caía en la columna A, porque letterOf() usa la primera letra del slug).
+- 57 casos de API (TC-API01..58) iguales en Newman, Bruno y Karate: RLS anónimo, apikey/login, visibilidad por rol y escrituras
+  que deben quedar bloqueadas (PATCH/DELETE con filtro y Prefer: return=representation: pasa si 401/403 o 0 filas afectadas).
+  JMeter: 16 casos (PERF-01..16, 5 usuarios x 10 iteraciones, p95 contra umbral de cases.json), repartidos en las 9 suites.
+- Fuente única: ivan-qa-lab-shared/api-cases (spec.js + gen-all.js + gen-jmeter.js). Se edita spec.js y se regeneran los 4 repos.
+- run.sh de cada uno: SUITE=a-auth,b-eventos (por defecto las 9) y GREP='^nombre$|^nombre$' (regex anclada de los nombres que
+  genera la web; run.sh la desescapa). Sin QA_PASSWORD los casos con login salen omitidos.
+- Login una sola vez por usuario y ejecución (Newman: collectionVariables; Bruno: bru.setVar; Karate: callSingle de
+  features/sessions.feature; JMeter: setUp thread group): Supabase Auth da 429 pasadas 30 peticiones de token en 5 min por IP.
+- Alta en la base: supabase/alta-api-performance.sql (incluye la migración 20261120020000: categoría `performance`).
+  Lector de tests de la web: .feature (Karate, como Cucumber), .bru, colección Postman y cases.json de JMeter (app/[tool]/page.tsx).
+- La API (app/api/runs/route.ts) guarda ya las últimas 2 runs de CADA SUITE (antes 4 por herramienta, y el Mapa solo podía
+  llenar 4 celdas por fila). SuiteGrid lee las últimas 500 runs.
+- Los 6 secretos de cada repo los pone poner-secretos.sh (raíz de ivan-qa-lab, local) desde .qa-lab.env. Gotchas: run.sh sin bit de
+  ejecución en Windows -> el workflow usa `bash ./run.sh`; jmeter.bat falla con rutas con espacios en Windows (run.sh lanza el JAR);
+  Karate 2.x (CLI) y 1.x (JAR) generan informes en directorios distintos (el conversor busca los json de forma recursiva).
+- Verificación (20-nov noche): todas las suites de cada herramienta lanzadas una a una en CI contra STG (resultados en el Mapa).
+- PENDIENTE: Appium (móvil) cuando exista la parte móvil de la web; ajustar estimated_seconds con lo medido en CI.
