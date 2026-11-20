@@ -167,6 +167,10 @@ player_mad, blocked, sinequipo.
 6. Solo cuando las herramientas funcionen: la web (home, página de herramienta con selector y botón
    Lanzar, pantalla en vivo con Realtime, resultados con métricas), Turnstile, ping keep-alive
    a ambos proyectos Supabase (se pausan a los 7 días sin actividad).
+   Referencia visual que pasó Iván (20-nov): https://www.threads.com/share/_9wj4GkUH
+   (post de @_code_and_chill_, "Architecture studio planner dashboard", React; es un vídeo).
+   No se ha podido ver el diseño desde aquí (la descarga solo trae el texto del post): antes de
+   maquetar, pedir a Iván capturas o una descripción de lo que le gusta de él.
 
 ## Reglas de trabajo
 - `gh` con el .env.local cargado usa su GITHUB_TOKEN (solo Actions) y da 403 en secrets: usar
