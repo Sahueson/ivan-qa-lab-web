@@ -336,3 +336,16 @@ La web ya copia: cabecera con navegación en píldora, modo noche, botón negro 
 - Verificación visual: Claude in Chrome (extensión) funciona; el dev server (`next dev -p 3100`) debe reiniciarse si Tailwind
   deja de generar clases (síntoma: página negra sin estilos). Para probar errores sin lanzar un run real, sustituir
   `window.fetch` por un stub que devuelva 409 para POST /api/runs.
+
+## API y rendimiento: Newman, Bruno, Karate, JMeter (HECHO 20-nov)
+- Repos qa-newman, qa-bruno, qa-karate (`api`, suite `api`) y qa-jmeter (`performance`, suite `carga`), en GitHub bajo Sahueson.
+- Los 3 de API tienen los mismos 17 casos TC-API01..17 (RLS anónimo y visibilidad por rol sobre la API REST/Auth de Supabase del
+  staging; 11 sin login y 6 con `QA_PASSWORD`, que se omiten si falta). JMeter: PERF-01..03 (5 usuarios x 10 iteraciones, p95 contra umbral).
+- Validados en CI y por la web (POST /api/runs -> 201 -> finished): Newman 17/17, Bruno 17/17, Karate 17/17, JMeter 3/3. `live_execution=true`.
+- Alta en la base: supabase/alta-api-performance.sql (incluye la migración 20261120020000 que añade la categoría `performance`).
+  Los secretos de cada repo (6) los pone `poner-secretos.sh` (en la raíz de ivan-qa-lab, local) desde `.qa-lab.env`.
+- Gotchas: run.sh sin bit de ejecución en Windows -> el workflow usa `bash ./run.sh`; Supabase Auth devuelve 429 si se hace un login por
+  iteración (JMeter hace uno por usuario virtual); Karate 2.x (CLI) y 1.x (JAR) no usan la misma sintaxis de `match each` ni el mismo
+  directorio de informes (el conversor busca los json de forma recursiva); jmeter.bat falla con rutas con espacios en Windows: run.sh lanza el JAR.
+- PENDIENTE: lector de tests de la web para .bru, .postman_collection.json y .jmx (Karate usaría el de Gherkin); medir estimated_seconds
+  en CI (ahora 70 s api y 90 s carga, estimados); Appium (móvil) queda para cuando exista la parte móvil de la web.
