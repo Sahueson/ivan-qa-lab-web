@@ -167,6 +167,11 @@ player_mad, blocked, sinequipo.
        545128c); TC-D05 es su regresión (retrasa 1,5 s la recarga y marca antes). Ojo: en el
        primer pintado del modal el borrador está vacío (casilla desmarcada un instante): esperar
        el estado inicial antes de tocar una casilla.
+   (d) RLS team_blackouts (baseline_prod.sql 450-464): `squad = 'ALL'` pasa para cualquier
+       admin -> un admin de un solo equipo crea Y borra días sin partida de "Ambos equipos" por
+       API (la UI lo oculta, TC-H03). CONFIRMADO en STG el 20-nov con sesión de admin_mad
+       (insert ALL 201; delete del ALL del super admin 200; control FOE 403). PENDIENTE (agente
+       del calendario). Cuando haya suite de API, test de regresión.
    Desde cbf909b la lógica FOE vive en la BD: close_foe_poll (recuento, sanción y escalado),
    request/approve/cancel_event_unlock, votos anónimos solo legibles por su autor, bucket
    team-documents privado; FOE: solo la Junta Operativa crea partidas.
