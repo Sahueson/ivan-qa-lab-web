@@ -82,11 +82,15 @@ export async function POST(request: Request) {
     return json(400, { error: "El cuerpo debe ser JSON" });
   }
 
-  const { tool, suite, selectedTags = [] } = (body ?? {}) as any;
+  const { tool, suite, suites, selectedTags = [] } = (body ?? {}) as any;
 
   if (typeof tool !== "string" || typeof suite !== "string" || !SLUG.test(tool) || !SLUG.test(suite)) {
     return json(400, { error: "Se esperan 'tool' y 'suite' como slugs válidos" });
   }
+
+  const validSuites: string[] = Array.isArray(suites)
+    ? suites.filter((s): s is string => typeof s === "string" && SLUG.test(s))
+    : [suite];
 
   const db = getAdminClient();
   const ipHash = clientIpHash(request);
@@ -153,11 +157,12 @@ export async function POST(request: Request) {
 
     try {
       const grepFilter = Array.isArray(selectedTags) && selectedTags.length > 0 ? selectedTags.join("|") : "";
+      const suiteInput = validSuites.length > 1 ? validSuites.join(",") : row.slug;
 
       await dispatchWorkflow({
         repo: row.tools.github_repo,
         workflowFile: row.tools.workflow_file,
-        inputs: { run_id: run.id, suite: row.slug, grep: grepFilter },
+        inputs: { run_id: run.id, suite: suiteInput, grep: grepFilter },
       });
     } catch (e) {
       console.error("dispatch failed", run.id, e);
