@@ -9,7 +9,22 @@ const AVAILABLE_TESTS = [
 const TIEMPO_FIJO = 39;
 const TIEMPO_PREP = 21;
 
-export default function RunSelector({ toolSlug, suiteSlug }: { toolSlug: string; suiteSlug: string }) {
+type Variant = {
+  id: string;
+  label: string;
+  slug: string;
+};
+
+export default function RunSelector({
+  initialToolSlug,
+  suiteSlug,
+  variants,
+}: {
+  initialToolSlug: string;
+  suiteSlug: string;
+  variants?: Variant[];
+}) {
+  const [activeToolSlug, setActiveToolSlug] = useState(initialToolSlug);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isLaunching, setIsLaunching] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -35,7 +50,7 @@ export default function RunSelector({ toolSlug, suiteSlug }: { toolSlug: string;
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tool: toolSlug,
+          tool: activeToolSlug,
           suite: suiteSlug,
           selectedTags,
         }),
@@ -57,6 +72,41 @@ export default function RunSelector({ toolSlug, suiteSlug }: { toolSlug: string;
 
   return (
     <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6 sm:p-8">
+      {/* Selector de lenguaje (Python / Java) cuando aplica */}
+      {variants && variants.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-6 mb-6 border-b border-[var(--border-subtle)]">
+          <div>
+            <p className="text-sm font-medium">Implementación / Lenguaje</p>
+            <p className="text-xs text-[var(--text-secondary)] font-mono mt-0.5">
+              Target: {activeToolSlug}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-1 p-1 rounded-full bg-[var(--bg-surface-muted)] border border-[var(--border-subtle)]">
+            {variants.map((v) => {
+              const isSelected = activeToolSlug === v.slug;
+              return (
+                <button
+                  key={v.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveToolSlug(v.slug);
+                    setErrorMsg(null);
+                  }}
+                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
+                    isSelected
+                      ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs'
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  }`}
+                >
+                  {v.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-semibold">Casos de prueba disponibles</h2>
         <span className="px-3 py-1 rounded-full bg-[var(--bg-surface-muted)] text-xs font-medium text-[var(--text-secondary)]">
