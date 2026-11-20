@@ -1,5 +1,6 @@
 'use client';
 import { useState, useMemo, useEffect, useRef, type ReactNode } from 'react';
+import Toast from './Toast';
 
 const TIEMPO_FIJO = 39;
 const TIEMPO_PREP = 21;
@@ -497,7 +498,7 @@ export default function RunSelector({
           </div>
 
           <div className="flex flex-col sm:items-end gap-2 w-full sm:w-auto">
-            {errorMsg && <p className="text-xs text-red-500 font-medium">{errorMsg}</p>}
+            <Toast message={errorMsg} onClose={() => setErrorMsg(null)} tone="error" />
             <button
               onClick={handleLaunch}
               disabled={selectedTestIds.length === 0 || isLaunching}
