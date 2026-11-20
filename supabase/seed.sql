@@ -63,3 +63,33 @@ insert into suites (tool_id, target_id, slug, name, description, estimated_secon
 select t.id, s.target_id, s.slug, s.name, s.description, s.estimated_seconds + 15
 from tools t, suites s join tools pw on pw.id = s.tool_id and pw.slug = 'playwright'
 where t.slug = 'cypress';
+
+-- API y rendimiento (20-nov): los mismos 17 casos TC-API01..17 en Newman, Bruno y Karate (RLS por API contra
+-- Supabase) y 3 casos de carga ligera en JMeter. live_execution pasa a true cuando el repo tenga sus 6 secretos,
+-- esté en la lista del token de la web y haya pasado en CI. Tiempo estimado = FIJO ~39 s + preparación ~21 s +
+-- la herramienta (sin medir aún en CI: reajustar con docs/tiempos-ejecucion.md).
+insert into tools (slug, name, category, description, github_repo, workflow_file, enabled, live_execution) values
+  ('newman', 'Newman', 'api',
+   'Colecciones de Postman ejecutadas por línea de comandos: RLS y roles sobre la API REST de Supabase.',
+   'Sahueson/qa-newman', 'run-tests.yml', true, false),
+  ('bruno', 'Bruno', 'api',
+   'Colecciones en ficheros .bru versionables con git: los mismos casos de API que Newman.',
+   'Sahueson/qa-bruno', 'run-tests.yml', true, false),
+  ('karate', 'Karate', 'api',
+   'Pruebas de API en Gherkin con Karate: los mismos casos de API que Newman y Bruno.',
+   'Sahueson/qa-karate', 'run-tests.yml', true, false),
+  ('jmeter', 'JMeter', 'performance',
+   'Prueba de carga ligera (5 usuarios virtuales) sobre la API, con umbral de percentil 95 por caso.',
+   'Sahueson/qa-jmeter', 'run-tests.yml', true, false);
+
+insert into suites (tool_id, target_id, slug, name, description, estimated_seconds)
+select t.id, g.id, 'api', 'API · RLS y roles',
+       '17 casos: acceso anónimo denegado, login y visibilidad de partidas por rol.', 70
+from tools t, targets g
+where t.slug in ('newman', 'bruno', 'karate') and g.slug = 'tactical-calendar';
+
+insert into suites (tool_id, target_id, slug, name, description, estimated_seconds)
+select t.id, g.id, 'carga', 'Carga ligera',
+       '3 casos: ping, lectura anónima y lectura autenticada con p95 bajo umbral.', 90
+from tools t, targets g
+where t.slug = 'jmeter' and g.slug = 'tactical-calendar';
