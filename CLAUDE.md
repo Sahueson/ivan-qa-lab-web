@@ -113,9 +113,10 @@ player_mad, blocked, sinequipo.
    read/write en todos los qa-* (si se crea un repo nuevo hay que añadirlo al token o el
    dispatch da 403 "Resource not accessible by personal access token"). Circuito API -> GitHub -> Supabase
    verificado: 201, run finished con github_run_url, summary, test_results y run_events.
-5. ~~Playwright~~ HECHO 19-nov: 6 suites, 43 tests, verdes en local (x3) y en CI vía API
-   (a-auth 13, b-eventos 6, c-inscripciones 7, d-asistencia 4, e-gobernanza 8, f-excedencias 5;
-   todas registradas en `suites` del lab y en supabase/seed.sql). Cada suite B-F hace
+5. ~~Playwright~~ HECHO 19/20-nov: 9 suites, 70 tests, 70/70 en local contra el demo (3,1 min)
+   (a-auth 13, b-eventos 13, c-inscripciones 7, d-asistencia 5, e-gobernanza 8, f-excedencias 5,
+   g-jugadores 7, h-calendario 7, i-normas 5; todas registradas en `suites` del lab y en
+   supabase/seed.sql con estimated_seconds medido). Cada suite B-I hace
    resetStaging() en beforeAll (parte del seed; no depende del orden). Esperas:
    app.waitForQuietNetwork() (cuenta peticiones en vuelo) — NO usar waitForLoadState
    ("networkidle"): en una SPA solo ocurre una vez por navegación y luego no espera nada.
@@ -123,7 +124,18 @@ player_mad, blocked, sinequipo.
    con uniforme Tiger Stripe, cancelada, pasada abierta, MAD en excedencia), D (MilSim pasada;
    asistencia exacta player_foe 29 % 1/3,5, junta2 60 % 1,5/2,5 con excedencia), E (5
    expedientes a falta del voto de junta2 + faltas previas para escalados), F (solicitudes
-   pendientes de player_foe y de admin_foe). Junta Directiva = superadmin, admin_foe, junta2.
+   pendientes de player_foe y de admin_foe), B (MAD a editar, a eliminar y cerrada con
+   player_mad), H (un día sin partida FOE +25..26 y otro MAD +27). I sube sus PDF en el test;
+   el reset borra filas de team_documents Y sus ficheros del bucket privado. ensureUsers fija
+   siempre is_blocked/is_super_admin=false salvo lo que diga users.json (la suite G bloquea y
+   asciende). Junta Directiva = superadmin, admin_foe, junta2.
+   Desbloqueo de actas (RPC request/approve/cancel_event_unlock): aprueban todos los
+   responsables menos quien pide: MAD = super admin (1); FOE = super admin + admin/Junta
+   Operativa del FOE (2 si pide admin_foe). Cancelar: solo quien pidió o el super admin.
+   loginAs() admite cambiar de usuario dentro de un test (borra localStorage y recarga).
+   playerCard(nick) admite los sufijos " [BLOQUEADO]" y " (Tú)" del título de la ficha.
+   Formulario de fechas sin partida: "Hasta" lleva min="Desde" -> el navegador bloquea el envío
+   y el mensaje de la app ("La fecha de fin no puede ser anterior...") nunca llega a salir.
    El aviso "No tienes «X» marcada" solo sale si la ficha tiene alguna equipación marcada.
    Detalle de la base: tests/a-auth/{auth,rbac}.spec.ts, tests/b-eventos/eventos.spec.ts, fixtures/qa.ts
    (loginAs con users.json de shared + espera de 1,5 s sin peticiones), pages/app-page.ts,
@@ -137,7 +149,9 @@ player_mad, blocked, sinequipo.
    edita).
    RESERVA DEL STAGING (staging_lock, migración 20261119020000): toda ejecución (web/CI, local,
    otro agente, `npm run reset-staging`) reserva con shared/reset-staging/lock.js antes de
-   resetear; atómica, caduca a 10 min, espera hasta 5 min y luego falla claro. La API responde
+   resetear; atómica, TTL 3 min renovado cada minuto mientras vive el proceso (antes 10 min
+   fijos: la suite completa del otro agente tardó 14,7 min y la reserva caducó a mitad), espera
+   hasta 5 min y luego falla claro. La API responde
    409 si está reservado. Credenciales: SUPABASE_URL/SUPABASE_SERVICE_KEY (CI) o
    LAB_URL/LAB_SERVICE_KEY (~/.qa-lab.env). Sin ella, dos ejecuciones simultáneas se resetean
    el staging mutuamente (causó fallos intermitentes de TC-B02).
@@ -149,8 +163,10 @@ player_mad, blocked, sinequipo.
    (c) EventDetailModal: al abrirse lanza loadCloudData y el efecto que inicializa el borrador
        de asistencia depende de `registrations` -> si el admin marca casillas antes de que
        termine la recarga, se borran sin avisar, se guarda attended=false con toast de éxito y
-       la partida queda BLOQUEADA con la asistencia mal. PENDIENTE (agente del calendario);
-       openEvent espera a esa recarga.
+       la partida queda BLOQUEADA con la asistencia mal. CORREGIDO (bfdc0e2, en main con
+       545128c); TC-D05 es su regresión (retrasa 1,5 s la recarga y marca antes). Ojo: en el
+       primer pintado del modal el borrador está vacío (casilla desmarcada un instante): esperar
+       el estado inicial antes de tocar una casilla.
    Desde cbf909b la lógica FOE vive en la BD: close_foe_poll (recuento, sanción y escalado),
    request/approve/cancel_event_unlock, votos anónimos solo legibles por su autor, bucket
    team-documents privado; FOE: solo la Junta Operativa crea partidas.
@@ -171,6 +187,17 @@ player_mad, blocked, sinequipo.
    (post de @_code_and_chill_, "Architecture studio planner dashboard", React; es un vídeo).
    No se ha podido ver el diseño desde aquí (la descarga solo trae el texto del post): antes de
    maquetar, pedir a Iván capturas o una descripción de lo que le gusta de él.
+   SELECTOR CON TIEMPO ESTIMADO (idea de Iván, 20-nov):
+   - Cada herramienta tiene sus tests etiquetados por funcionalidad (login, roles, partidas,
+     inscripciones, asistencia, gobernanza, excedencias, jugadores, calendario, normas...).
+   - En la web se marcan o desmarcan funcionalidades, suites y tests sueltos.
+   - Cada test lleva su duración media medida (agregar test_results.duration_ms por nombre).
+   - Un contador ("esto tardará ~X, ¿lo lanzas?") sube al marcar y baja al desmarcar.
+   Implica:
+   - tags homogéneos en todas las herramientas (Playwright: `tag: ['@login']`);
+   - que POST /api/runs acepte una selección de tags o tests, no solo la suite;
+   - que el workflow filtre (Playwright: `--grep`).
+   Límites: expire_stale_runs (15 min) y la reserva del staging.
 
 ## Reglas de trabajo
 - `gh` con el .env.local cargado usa su GITHUB_TOKEN (solo Actions) y da 403 en secrets: usar

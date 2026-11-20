@@ -10,11 +10,15 @@ insert into suites (tool_id, target_id, slug, name, description, estimated_secon
 select t.id, g.id, s.slug, s.name, s.description, s.secs
 from tools t, targets g,
   (values
-    ('a-auth', 'Autenticación y perfiles', 'Login, bloqueo de usuarios y ficha de operador', 60),
-    ('b-eventos', 'Ciclo de vida de eventos', 'Creación, cancelación y bloqueo de acta', 90),
-    ('c-inscripciones', 'Inscripciones y reglas', 'Equipación preseleccionada, regla de 48 h, excedencias, partidas cerradas', 60),
-    ('d-asistencia', 'Motor de asistencia', '% anual, ponderación MilSim, descuento por excedencia y cierre de acta', 60),
-    ('e-gobernanza', 'Gobernanza FOE', 'Expedientes, recusación, cierre por cuórum y escalado de faltas', 60),
-    ('f-excedencias', 'Excedencias FOE', 'Solicitud, duración mínima, concesión por la Junta y nadie se concede la suya', 60)
+    -- estimated_seconds: duración media medida de los tests + reset (20-nov-2026, sin el arranque de CI).
+    ('a-auth', 'Autenticación y perfiles', 'Login, bloqueo de usuarios, ficha de operador y qué ve cada rol', 25),
+    ('b-eventos', 'Ciclo de vida de partidas', 'Crear, editar, cancelar, reactivar y eliminar; cerrar el acta y desbloquearla con aprobación', 45),
+    ('c-inscripciones', 'Inscripciones y reglas', 'Equipación preseleccionada, regla de 48 h, excedencias, partidas cerradas', 25),
+    ('d-asistencia', 'Motor de asistencia', '% anual, ponderación MilSim, descuento por excedencia y cierre de acta', 20),
+    ('e-gobernanza', 'Gobernanza FOE', 'Expedientes, recusación, cierre por cuórum y escalado de faltas', 25),
+    ('f-excedencias', 'Excedencias FOE', 'Solicitud, duración mínima, concesión por la Junta y nadie se concede la suya', 15),
+    ('g-jugadores', 'Gestión de jugadores', 'Rol, bloqueo, equipos y órganos FOE (solo super admin) y qué jugadores ve cada admin', 25),
+    ('h-calendario', 'Calendario y fechas sin partida', 'Vacaciones / No se juega por equipo: marcar, validar, ver y quitar', 20),
+    ('i-normas', 'Normas del equipo', 'PDF en bucket privado: subida, enlace firmado, borrado del fichero y quién sube y ve', 25)
   ) as s(slug, name, description, secs)
 where t.slug = 'playwright' and g.slug = 'tactical-calendar';
