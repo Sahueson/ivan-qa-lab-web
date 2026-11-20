@@ -16,6 +16,28 @@ function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+/** Nombres de escenario de un .feature, con los esquemas expandidos por sus Ejemplos. */
+function gherkinScenarioNames(content: string): string[] {
+  const names: string[] = [];
+  const lines = content.split(/\r?\n/).map((l) => l.trim());
+  let outline: string | null = null;
+  let header: string[] | null = null;
+  const cells = (row: string) => row.replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
+  for (const line of lines) {
+    const scenario = line.match(/^(?:Escenario|Scenario|Ejemplo|Example):\s*(.+)$/);
+    const outlineMatch = line.match(/^(?:Esquema del escenario|Scenario Outline|Scenario Template):\s*(.+)$/);
+    if (scenario) { names.push(scenario[1]); outline = null; header = null; continue; }
+    if (outlineMatch) { outline = outlineMatch[1]; header = null; continue; }
+    if (outline && /^(?:Ejemplos|Examples|Escenarios):/.test(line)) { header = null; continue; }
+    if (outline && line.startsWith('|')) {
+      if (!header) { header = cells(line); continue; }
+      const row = cells(line);
+      names.push(header.reduce((n, col, i) => n.split(`<${col}>`).join(row[i] ?? ''), outline));
+    }
+  }
+  return names;
+}
+
 async function discoverTestsFromGitHub(
   githubRepo: string | null | undefined,
   toolSlug: string,
@@ -51,10 +73,12 @@ async function discoverTestsFromGitHub(
 
     const isPython = toolSlug.includes('python');
     const isJava = toolSlug.includes('java');
+    const isCucumber = toolSlug.includes('cucumber');
 
     const testFiles = files
       .filter((f) => {
         if (f.type !== 'blob') return false;
+        if (isCucumber) return /\.feature$/.test(f.path);
         if (isJava) return /Test\.java$/.test(f.path);
         if (isPython) return /(^|\/)test_.*\.py$|_test\.py$/.test(f.path);
         return /\.(spec|test)\.(ts|js|tsx|jsx)$/.test(f.path);
@@ -86,7 +110,21 @@ async function discoverTestsFromGitHub(
             || (shortSlug.length > 2 && lowerPath.includes(shortSlug));
         });
 
-        if (isJava) {
+        if (isCucumber) {
+          // Gherkin (en español o inglés): cada "Escenario:" es un caso; un "Esquema del escenario:"
+          // genera uno por fila de "Ejemplos:" sustituyendo <columna>, como hace Cucumber. El filtro
+          // (grep) es el nombre exacto como regex anclada, para --name de cucumber-js.
+          for (const name of gherkinScenarioNames(content)) {
+            discovered.push({
+              id: `${file.path}:${name}`,
+              name,
+              grepValue: `^${escapeRegex(name)}$`,
+              suiteSlug: matchedSuite?.slug,
+              duration: 4.0,
+              filePath: file.path,
+            });
+          }
+        } else if (isJava) {
           // Nombre visible = @DisplayName("TC-A01 ...") (el mismo que en Playwright); el filtro
           // (grep) usa el nombre del método (tcA01_...), que es lo que entiende surefire.
           const javaRegex = /@Test\b((?:(?!@Test\b)[\s\S]){0,400}?)(?:public\s+)?void\s+([a-zA-Z0-9_]+)\s*\(/g;
