@@ -2,6 +2,40 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import { getAdminClient } from '@/lib/supabase/admin';
 
+// Mini gráfico de la tarjeta negra: tasa de éxito acumulada, del run más antiguo al más reciente.
+function Sparkline({ statuses }: { statuses: string[] }) {
+  if (statuses.length < 2) return null;
+
+  const rates = statuses.map(
+    (_, i) => statuses.slice(0, i + 1).filter((s) => s === 'finished').length / (i + 1),
+  );
+
+  const W = 120;
+  const H = 40;
+  const PAD = 3;
+  const points = rates.map((r, i) => {
+    const x = PAD + (i / (rates.length - 1)) * (W - PAD * 2);
+    const y = PAD + (1 - r) * (H - PAD * 2);
+    return [x, y] as const;
+  });
+  const line = points.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+  const area = `${line} L${points[points.length - 1][0].toFixed(1)},${H} L${points[0][0].toFixed(1)},${H} Z`;
+  const [lx, ly] = points[points.length - 1];
+
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className="w-28 h-10 shrink-0"
+      role="img"
+      aria-label="Evolución de la tasa de éxito en los últimos runs"
+    >
+      <path d={area} fill="currentColor" opacity="0.12" />
+      <path d={line} fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={lx} cy={ly} r="2.5" fill="currentColor" />
+    </svg>
+  );
+}
+
 async function StudioDashboard() {
   const db = getAdminClient();
 
@@ -40,8 +74,9 @@ async function StudioDashboard() {
             <span>Estabilidad reciente</span>
             <span>Últimos runs</span>
           </div>
-          <div className="my-2">
+          <div className="my-2 flex items-end justify-between gap-3">
             <span className="text-3xl font-semibold tracking-tight">{passRate}%</span>
+            <Sparkline statuses={[...recentRuns].reverse().map((r) => r.status)} />
           </div>
           <div className="flex items-center gap-2 text-xs">
             <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-medium">
