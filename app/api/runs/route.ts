@@ -53,9 +53,10 @@ async function pruneOldRunsForTool(db: ReturnType<typeof getAdminClient>, toolId
   // 1. Limpiar capturas del bucket 'evidence' asociadas a esas runs
   for (const oldRunId of idsToDelete) {
     try {
-      const { data: files } = await db.storage.from("evidence").list(oldRunId);
+      // Las capturas se suben a runs/<run_id>/ (shared/send-to-supabase.js uploadEvidence).
+      const { data: files } = await db.storage.from("evidence").list(`runs/${oldRunId}`);
       if (files && files.length > 0) {
-        const paths = files.map((f) => `${oldRunId}/${f.name}`);
+        const paths = files.map((f) => `runs/${oldRunId}/${f.name}`);
         await db.storage.from("evidence").remove(paths);
       }
     } catch {
@@ -63,12 +64,13 @@ async function pruneOldRunsForTool(db: ReturnType<typeof getAdminClient>, toolId
     }
   }
 
-  // 2. Eliminar registros relacionados y las runs antiguas
+  // 2. Eliminar registros relacionados y las runs antiguas. run_requests NO se toca: es el
+  // historial del límite por IP y por día, y debe sobrevivir a la limpieza (migración
+  // 20261120010000: ya no depende de runs).
   await Promise.all([
     db.from("run_events").delete().in("run_id", idsToDelete),
     db.from("test_results").delete().in("run_id", idsToDelete),
     db.from("run_summary").delete().in("run_id", idsToDelete),
-    db.from("run_requests").delete().in("run_id", idsToDelete),
   ]);
 
   await db.from("runs").delete().in("id", idsToDelete);
@@ -170,6 +172,8 @@ export async function POST(request: Request) {
         .update({ status: "failed", finished_at: new Date().toISOString() })
         .eq("id", run.id);
       await db.from("run_requests").delete().eq("run_id", run.id);
+      // También aquí: una ejecución fallida al lanzar cuenta para las 4 que se guardan.
+      await pruneOldRunsForTool(db, row.tool_id);
       return json(502, { error: "No se pudo lanzar la ejecución", run_id: run.id });
     }
 
