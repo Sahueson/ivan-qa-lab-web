@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { getAdminClient } from '@/lib/supabase/admin';
 import Link from 'next/link';
+import { caseCode, compareCaseNames } from '@/lib/case-order';
 
 async function ResultsContent({ params }: { params: Promise<{ id: string }> }) {
   const { id: runId } = await params;
@@ -12,7 +13,8 @@ async function ResultsContent({ params }: { params: Promise<{ id: string }> }) {
   ]);
 
   const summary = summaryRes.data;
-  const tests = testsRes.data || [];
+  // Mismo orden que el selector: TC-SMOKE, TC-A01, TC-A01b, TC-A02...
+  const tests = [...(testsRes.data || [])].sort((a, b) => compareCaseNames(a.name, b.name));
 
   if (!summary) {
     return (
@@ -72,11 +74,11 @@ async function ResultsContent({ params }: { params: Promise<{ id: string }> }) {
         <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6">
           <h2 className="text-base font-semibold mb-1">Tiempos por escenario</h2>
           <p className="text-xs text-[var(--text-secondary)] mb-6">Comparativa de duración en segundos</p>
-          <div className="flex items-end gap-3 h-36 pt-4 px-2">
+          <div className="flex items-end gap-3 h-36 pt-4 px-2 overflow-x-auto">
             {tests.map((test) => {
               const heightPct = Math.max(15, Math.round(((test.duration_ms || 500) / maxDuration) * 100));
               return (
-                <div key={test.id} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
+                <div key={test.id} title={test.name} className="flex-1 min-w-[48px] flex flex-col items-center gap-2 h-full justify-end">
                   <span className="text-[11px] font-mono text-[var(--text-secondary)]">
                     {test.duration_ms ? `${(test.duration_ms / 1000).toFixed(1)}s` : '-'}
                   </span>
@@ -88,8 +90,10 @@ async function ResultsContent({ params }: { params: Promise<{ id: string }> }) {
                         : 'bg-[var(--pill-active-bg)] opacity-85 hover:opacity-100'
                     }`}
                   />
-                  <span className="text-[11px] text-[var(--text-secondary)] truncate max-w-[70px]">
-                    {test.name}
+                  {/* Solo el código (TC-D05): el nombre entero no cabe bajo la barra; se ve al pasar
+                      el ratón (title) y en la tabla de abajo. */}
+                  <span className="text-[10px] font-mono text-[var(--text-secondary)] whitespace-nowrap">
+                    {caseCode(test.name)}
                   </span>
                 </div>
               );

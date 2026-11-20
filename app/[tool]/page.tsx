@@ -1,6 +1,8 @@
 import { Suspense } from 'react';
 import { getAdminClient } from '@/lib/supabase/admin';
 import RunSelector, { DiscoveredTest, SuiteItem } from '@/app/components/RunSelector';
+import RecentRuns from '@/app/components/RecentRuns';
+import { compareCaseNames } from '@/lib/case-order';
 
 function normalizeRepo(repo: string): string {
   return repo
@@ -140,22 +142,8 @@ async function discoverTestsFromGitHub(
       })
     );
 
-    // Orden por código de caso, igual en todas las herramientas: TC-SMOKE, TC-A01, TC-A01b, TC-A02...
-    // (ordenar por id como texto mezclaba B02b, B02, B08, B03 según el nombre del método).
-    const caseKey = (name: string): [number, string, number, string] => {
-      const m = name.match(/^TC-([A-Z]+)(\d*)([a-z]?)\b/);
-      if (!m) return [2, name, 0, ''];
-      if (m[1] === 'SMOKE') return [0, '', 0, ''];
-      return [1, m[1], Number(m[2] || 0), m[3]];
-    };
-    return discovered.sort((a, b) => {
-      const ka = caseKey(a.name), kb = caseKey(b.name);
-      for (let i = 0; i < ka.length; i++) {
-        if (ka[i] < kb[i]) return -1;
-        if (ka[i] > kb[i]) return 1;
-      }
-      return a.id.localeCompare(b.id);
-    });
+    // Orden por código de caso, igual en todas las herramientas (lib/case-order.ts).
+    return discovered.sort((a, b) => compareCaseNames(a.name, b.name) || a.id.localeCompare(b.id));
   } catch {
     return [];
   }
@@ -242,6 +230,8 @@ async function ToolContent({ params }: { params: Promise<{ tool: string }> }) {
         suitesByTool={suitesByTool}
         testsByTool={testsByTool}
       />
+
+      <RecentRuns toolIds={relevantToolIds} />
     </div>
   );
 }
