@@ -183,7 +183,30 @@ player_mad, blocked, sinequipo.
    RUN_ID); en local no. Verificado en CI: 6/6 con 6 URLs 200.
    Para pruebas repetidas desde la API: el límite 3/h por IP muerde; en desarrollo se libera
    borrando run_requests propias (BD del lab, service key).
-   Después Selenium (misma suite A para comparar), Cucumber (C y E en Given/When/Then),
+   SELENIUM (20-nov, EN CURSO): un solo repo qa-selenium con java/ (Java 21 + JUnit 6 +
+   Maven, suites = @Tag -> `mvn test -Dgroups=a-auth`) y python/ (3.12 + pytest, suites =
+   carpetas -> `pytest tests/a-auth`). Un workflow por lenguaje (run-tests-java.yml y
+   run-tests-python.yml, ubuntu-latest sin contenedor: trae Chrome; Selenium Manager pone el
+   chromedriver). Dos herramientas en `tools` (selenium-java, selenium-python), mismo repo,
+   live_execution=false hasta pasar en CI.
+   Mismos casos y nombres que Playwright. Hecha la suite A (13 tests): Python 13/13 contra el
+   demo en local; Java sin compilar en local (falta el JDK: solo hay JRE 21).
+   Piezas nuevas en shared, que valen para cualquier herramienta que no sea Node:
+   - reset-staging/with-staging.js -- <cmd>: reserva + reset + tests + libera; el hijo hereda
+     QA_LOCK_HELD=1 y reset.js no vuelve a pedir la reserva;
+   - publish-results.js result.json: sube las evidence_path, tapa QA_PASSWORD y cierra el run.
+   Selenium no tiene eventos de red: se inyecta por CDP (Page.addScriptToEvaluateOnNewDocument)
+   un contador de fetch a Supabase (window.__qa) para waitForQuietNetwork.
+   Gotcha: el getText()/.text de Selenium es texto renderizado (CSS uppercase -> "QA JUGADOR
+   MAD"); para comparar como toContainText se usa textContent.
+   PENDIENTE: el usuario pone los 6 secretos en qa-selenium (los mismos que qa-playwright);
+   validar ambos en CI; live_execution=true; portar B-I.
+   Gotcha de Playwright: si un test falla, Playwright reinicia el worker y vuelve a ejecutar el
+   beforeAll (resetStaging) para los tests siguientes, y borra lo que hubieran creado los
+   anteriores.
+   Gotcha de Storage: tras borrar un fichero, su enlace firmado puede seguir sirviéndose desde la
+   CDN hasta ~60 s. Para comprobar el borrado se pide un enlace nuevo al servidor (TC-I02).
+   Después: Cucumber (C y E en Given/When/Then),
    Newman/Bruno/Karate (suite D y comprobación de RLS por API), Appium al final (resultados pregrabados).
 6. Solo cuando las herramientas funcionen: la web (home, página de herramienta con selector y botón
    Lanzar, pantalla en vivo con Realtime, resultados con métricas), Turnstile, ping keep-alive
@@ -203,29 +226,18 @@ player_mad, blocked, sinequipo.
    - que POST /api/runs acepte una selección de tags o tests, no solo la suite;
    - que el workflow filtre (Playwright: `--grep`).
    Límites: expire_stale_runs (15 min) y la reserva del staging.
-   TIEMPOS PARA EL CONTADOR: medirlos en CI contra STG, no en local (en CI va unas 3 veces más
-   lento: suite G 16 s en local y 48 s en CI). PENDIENTE, aplazado a las ejecuciones
-   programadas: 9 suites x 3 vueltas en serie son unas 1,5 h.
-   Método:
-   - mediana de test_results.duration_ms por test, solo de runs de CI;
-   - desglose por run con la API de jobs de GitHub
-     (`env -u GITHUB_TOKEN gh api repos/Sahueson/qa-playwright/actions/runs/<id>/jobs`, el id
-     sale de runs.github_run_url):
-     - cola = de runs.created_at al inicio del job;
-     - arranque = del inicio del job al paso "Ejecutar tests";
-     - tests = duración de ese paso (reserva + reset + tests);
-     - cierre = resto.
-   Resultado: guardar en docs/tiempos-ejecucion.md (tabla por test) y el resumen aquí.
-   Primer dato (20-nov, a-auth, 13/13):
-   | Tramo   | Segundos | Qué incluye                          |
-   |---------|----------|--------------------------------------|
-   | Total   | 78       | lo que ve el visitante               |
-   | Cola    | 5        | de pulsar Lanzar a que empieza el job |
-   | Arranque| 33       | contenedor, checkout y npm ci        |
-   | Tests   | 39       | reserva + reset + tests              |
-   | Cierre  | 5        | subir resultados y capturas          |
-   El contador sería: unos 45 s fijos (cola + arranque + cierre) + la suma de los tests marcados.
-   estimated_seconds de `suites` (25-45 s) está medido en LOCAL: se recalcula con los datos de CI.
+   TIEMPOS PARA EL CONTADOR: HECHO 20-nov, medidos en CI contra STG (una ejecución por suite;
+   es una media aproximada). Tabla por test y por suite en docs/tiempos-ejecucion.md.
+   Fórmula: total ≈ FIJO (~39 s: cola de GitHub ~5 + arranque del job ~30 + cierre ~5)
+   + PREPARACIÓN (~21 s: reserva + reset + arranque de la herramienta)
+   + la suma de los tests marcados.
+   En CI los tests van ~1,6 veces más lentos que en local.
+   suites.estimated_seconds = total del visitante medido en CI: entre 70 s (g) y 105 s (i).
+   Método para volver a medir:
+   - test_results.duration_ms por test (runs de CI);
+   - tramos del job con `env -u GITHUB_TOKEN gh api repos/<repo>/actions/runs/<id>/jobs`
+     (el id sale de runs.github_run_url);
+   - completed_at del job puede venir vacío si se lee justo al acabar: usar total - paso de tests.
 
 ## Reglas de trabajo
 - `gh` con el .env.local cargado usa su GITHUB_TOKEN (solo Actions) y da 403 en secrets: usar
