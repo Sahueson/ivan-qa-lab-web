@@ -285,10 +285,11 @@ La web ya copia: cabecera con navegación en píldora, modo noche, botón negro 
   columnas = letra de la suite (A–I). Celda = último run de esa pareja: píldora negra si superado (✓ p/t), blanca con punto
   ámbar (con fallos) o rojo (fallido), punteada si nunca se ha lanzado, "·" si la herramienta no tiene esa suite (Cucumber
   solo C y E). Usa las últimas 80 runs; se guardan 4 por herramienta, así que muchas celdas salen "sin ejecutar".
-- PENDIENTE, por orden: (1) gráficos de área/barras grises (última barra en negro) en la página de resultados;
-  (2) buscador ⌘K en la cabecera (opcional).
-- HECHO 20-nov: hueco de "Motores" resuelto: el mapa de suites va en la columna izquierda bajo los motores y el panel negro
-  queda a la derecha con `items-start`.
+- HECHO 20-nov: página de resultados (app/runs/[id]/results/page.tsx): gráfico de área "Duración acumulada"
+  (app/components/AreaChart.tsx, SVG puro, rejilla punteada, punto en el último valor) y barras "Tiempos por escenario" en gris
+  con la más lenta en negro y las fallidas en rojo. Probado con un run de Selenium Java (suite D, 5 tests); falta verlo con un run
+  con fallos y con uno de 13+ escenarios (las etiquetas del eje X se espacian solas si hay más de 10).
+- PENDIENTE, por orden: (1) buscador ⌘K en la cabecera (opcional).
 - PENDIENTE de revisión de maquetación: anchos de contenedor distintos entre
   páginas (home 7xl vs herramienta ~780 px), scroll interno en la lista de escenarios, contraste de textos secundarios,
   etiquetas de estado en inglés/mayúsculas, texto "Configurar tags y lanzar" (ya no hay tags), "Estabilidad 50%" por los

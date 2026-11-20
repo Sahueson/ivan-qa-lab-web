@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { getAdminClient } from '@/lib/supabase/admin';
 import Link from 'next/link';
 import { caseCode, compareCaseNames } from '@/lib/case-order';
+import AreaChart from '@/app/components/AreaChart';
 
 async function ResultsContent({ params }: { params: Promise<{ id: string }> }) {
   const { id: runId } = await params;
@@ -26,6 +27,11 @@ async function ResultsContent({ params }: { params: Promise<{ id: string }> }) {
 
   const passRate = summary.total > 0 ? Math.round((summary.passed / summary.total) * 100) : 0;
   const maxDuration = Math.max(...tests.map((t) => t.duration_ms || 1000), 1000);
+  // Duración acumulada (en segundos) escenario a escenario, para el gráfico de área.
+  const cumulative = tests.map((t, i) => ({
+    label: caseCode(t.name),
+    value: tests.slice(0, i + 1).reduce((acc, x) => acc + (x.duration_ms || 0) / 1000, 0),
+  }));
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-8 py-6 space-y-8">
@@ -69,11 +75,20 @@ async function ResultsContent({ params }: { params: Promise<{ id: string }> }) {
         </div>
       </div>
 
+      {/* Gráfico de área: duración acumulada (inspirado en "Fees earned" de Talmo) */}
+      {cumulative.length > 1 && (
+        <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6">
+          <h2 className="text-base font-semibold mb-1">Duración acumulada</h2>
+          <p className="text-xs text-[var(--text-secondary)] mb-4">Tiempo transcurrido de la suite escenario a escenario</p>
+          <AreaChart points={cumulative} ariaLabel="Duración acumulada de la suite por escenario" />
+        </div>
+      )}
+
       {/* Gráfico de barras verticales por test (inspirado en "By week" de Talmo) */}
       {tests.length > 0 && (
         <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6">
           <h2 className="text-base font-semibold mb-1">Tiempos por escenario</h2>
-          <p className="text-xs text-[var(--text-secondary)] mb-6">Comparativa de duración en segundos</p>
+          <p className="text-xs text-[var(--text-secondary)] mb-6">Comparativa de duración en segundos · en negro el más lento, en rojo los fallidos</p>
           <div className="flex items-end gap-3 h-36 pt-4 px-2 overflow-x-auto">
             {tests.map((test) => {
               const heightPct = Math.max(15, Math.round(((test.duration_ms || 500) / maxDuration) * 100));
@@ -87,7 +102,9 @@ async function ResultsContent({ params }: { params: Promise<{ id: string }> }) {
                     className={`w-full max-w-[44px] rounded-t-xl transition-all ${
                       test.status === 'failed'
                         ? 'bg-red-500'
-                        : 'bg-[var(--pill-active-bg)] opacity-85 hover:opacity-100'
+                        : (test.duration_ms || 0) === maxDuration
+                        ? 'bg-[var(--pill-active-bg)]'
+                        : 'bg-[var(--text-secondary)] opacity-40 hover:opacity-70'
                     }`}
                   />
                   {/* Solo el código (TC-D05): el nombre entero no cabe bajo la barra; se ve al pasar
