@@ -22,7 +22,7 @@ export default function InformeView({ data }: { data: InformeData }) {
         <p className="text-xs uppercase tracking-wider text-[var(--text-secondary)]">Informe ejecutivo · Ivan QA Lab</p>
         <h1 className="text-4xl font-semibold tracking-tight">{info.titulo}</h1>
         <p className="text-sm text-[var(--text-secondary)]">{info.descripcion}</p>
-        <p className="text-xs text-[var(--text-secondary)]">Generado el {new Date(data.generado).toLocaleString('es-ES')} · Entorno: staging de Tactical Calendar</p>
+        <p className="text-xs text-[var(--text-secondary)]">Generado el {new Date(data.generado).toLocaleString('es-ES', { timeZone: 'Europe/Madrid' })} · Entorno: staging de Tactical Calendar</p>
       </header>
 
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">

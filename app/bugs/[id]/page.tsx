@@ -29,8 +29,8 @@ async function BugPageContent({ params }: { params: Promise<{ id: string }> }) {
           {bug.tool_slug && <div>Herramienta: <span className="text-[var(--text-primary)]">{bug.tool_slug}</span></div>}
           {bug.suite_slug && <div>Suite: <span className="text-[var(--text-primary)]">{bug.suite_slug}</span></div>}
           {bug.test_name && <div className="sm:col-span-2">Test: <span className="text-[var(--text-primary)]">{bug.test_name}</span></div>}
-          <div>Creado: {new Date(bug.created_at).toLocaleString('es-ES')}</div>
-          <div>Actualizado: {new Date(bug.updated_at).toLocaleString('es-ES')}</div>
+          <div>Creado: {new Date(bug.created_at).toLocaleString('es-ES', { timeZone: 'Europe/Madrid' })}</div>
+          <div>Actualizado: {new Date(bug.updated_at).toLocaleString('es-ES', { timeZone: 'Europe/Madrid' })}</div>
         </dl>
         <div className="flex flex-wrap gap-4 text-sm">
           {bug.run_id && <Link href={`/runs/${bug.run_id}/results`} className="underline">Ver el run</Link>}
@@ -43,7 +43,7 @@ async function BugPageContent({ params }: { params: Promise<{ id: string }> }) {
         {(comments ?? []).map((c) => (
           <li key={c.id} className={`rounded-2xl border border-[var(--border-subtle)] p-4 ${c.kind === 'resolucion' ? 'bg-emerald-500/10' : c.kind === 'reapertura' ? 'bg-red-500/10' : 'bg-[var(--bg-surface)]'}`}>
             <p className="text-xs text-[var(--text-secondary)]">
-              <span className="font-medium text-[var(--text-primary)]">{c.author}</span> · {TIPOS[c.kind]} · {new Date(c.created_at).toLocaleString('es-ES')}
+              <span className="font-medium text-[var(--text-primary)]">{c.author}</span> · {TIPOS[c.kind]} · {new Date(c.created_at).toLocaleString('es-ES', { timeZone: 'Europe/Madrid' })}
             </p>
             <p className="text-sm mt-1 whitespace-pre-wrap">{c.body}</p>
           </li>

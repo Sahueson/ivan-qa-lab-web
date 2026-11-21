@@ -30,7 +30,7 @@ async function BugsPageContent() {
               <div className="min-w-0">
                 <p className="font-medium truncate">#{b.id} · {b.title}</p>
                 <p className="text-xs text-[var(--text-secondary)] mt-1">
-                  {[b.tool_slug, b.suite_slug].filter(Boolean).join(' · ') || 'Sin test asociado'} · {new Date(b.created_at).toLocaleDateString('es-ES')} · {comentarios} comentarios
+                  {[b.tool_slug, b.suite_slug].filter(Boolean).join(' · ') || 'Sin test asociado'} · {new Date(b.created_at).toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid' })} · {comentarios} comentarios
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">

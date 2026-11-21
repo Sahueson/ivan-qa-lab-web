@@ -34,7 +34,7 @@ async function InformesPageContent() {
           {(guardados ?? []).map((i) => (
             <Link key={i.id} href={`/informes/guardado/${i.id}`} className="flex justify-between p-4 text-sm hover:bg-[var(--bg-surface-muted)] transition">
               <span>{GRUPOS[i.grupo as Grupo]?.titulo ?? i.grupo}</span>
-              <span className="text-[var(--text-secondary)]">{new Date(i.created_at).toLocaleString('es-ES')}</span>
+              <span className="text-[var(--text-secondary)]">{new Date(i.created_at).toLocaleString('es-ES', { timeZone: 'Europe/Madrid' })}</span>
             </Link>
           ))}
         </div>
