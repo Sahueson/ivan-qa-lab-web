@@ -110,7 +110,7 @@ export default function Navbar({ tools }: { tools: NavTool[] }) {
             href="/"
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${pathname === '/' ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
           >
-            Studio
+            {t('Inicio')}
           </Link>
 
           {categories.map((cat) => {
@@ -220,7 +220,7 @@ export default function Navbar({ tools }: { tools: NavTool[] }) {
       {/* Móvil: los enlaces van en su propia fila (desplazable), no apretados junto a los botones */}
       <nav className="lg:hidden flex items-center gap-2 overflow-x-auto px-4 pb-3 -mt-1" aria-label={t('Secciones')}>
         {[
-          { href: '/', label: 'Studio' },
+          { href: '/', label: 'Inicio' },
           { href: '/informes', label: 'Informes' },
           { href: '/bugs', label: 'Bugs' },
           { href: '/about', label: 'Sobre mí' },

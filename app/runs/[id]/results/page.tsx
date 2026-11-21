@@ -74,7 +74,7 @@ async function ResultsContent({ params }: { params: Promise<{ id: string }> }) {
             href="/"
             className="px-4 py-2 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-sm font-medium hover:opacity-80 transition"
           >
-            ← {t('Volver a Studio')}
+            ← {t('Volver al inicio')}
           </Link>
         </div>
       </div>

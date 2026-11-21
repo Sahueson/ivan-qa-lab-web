@@ -387,6 +387,8 @@ La web ya copia: cabecera con navegación en píldora, modo noche, botón negro 
   falta una, se enseña el español). Servidor: `const { t, locale } = await getT()` (lib/i18n-server.ts); cliente: useT()/useI18n(). Fechas: dateLocale(locale).
   Quedan en español por venir de la base de datos o de los repos: nombres de tests, contenido de los bugs, los informes HTML de GitHub Pages y el CV (PDF).
   Al añadir texto nuevo: escribirlo en español con t() y añadir su par en i18n-en.ts.
+- <html translate="no"> + <meta name="google" content="notranslate">: el traductor automático de Chrome traducía la web en inglés al español y rompía los textos
+  (Playwright -> "Dramaturgo") y puede provocar errores de React. El idioma lo gestiona la propia web. "Studio" (nombre heredado del rediseño del 20-nov) pasó a Inicio / Home.
 - MAPA DE SUITES ELIMINADO (21-nov, decisión de Iván): con 4 runs por herramienta casi siempre estaba vacío. La letra de la suite va en su nombre
   (RunSelector.suiteLabel: "A · Autenticación y perfiles"). "Seleccionar todas las suites" excluye la J (Demo de fallos).
 - Los 6 secretos de cada repo los pone poner-secretos.sh (raíz de ivan-qa-lab, local) desde .qa-lab.env. Gotchas: run.sh sin bit de

@@ -270,4 +270,6 @@ export const EN: Record<string, string> = {
   'Normas del equipo': 'Team rules',
   'Demo de fallos': 'Failure demo',
   '(test names are in Spanish, like the app under test)': '(test names are in Spanish, like the app under test)',
+  'Inicio': 'Home',
+  'Volver al inicio': 'Back to home',
 };

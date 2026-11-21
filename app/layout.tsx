@@ -9,6 +9,7 @@ import { getLocale } from '@/lib/i18n-server';
 export const metadata: Metadata = {
   title: 'Ivan QA Lab — Automation Studio',
   description: 'Orquestador de suites automatizadas y métricas en tiempo real',
+  other: { google: 'notranslate' },
 };
 
 // El idioma lo decide el servidor (cookie qa-lang o idioma del navegador): el HTML sale ya traducido y no hay desfase al hidratar.
@@ -26,7 +27,7 @@ async function LocaleShell({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es" translate="no" suppressHydrationWarning>
       <body className="min-h-screen antialiased selection:bg-neutral-800 selection:text-white">
         <ThemeProvider>
           <Suspense fallback={<div className="h-20" />}>
