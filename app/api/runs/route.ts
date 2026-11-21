@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { dispatchWorkflow } from "@/lib/github/dispatch";
+import { advanceQueue, MAX_WAITING } from "@/lib/queue";
 
 const MAX_RUNS_PER_IP_PER_HOUR = 3;
 const MAX_RUNS_PER_DAY = 50;
@@ -139,8 +140,29 @@ export async function POST(request: Request) {
       .eq("id", 1)
       .maybeSingle<{ holder: string | null; expires_at: string | null }>();
     if (lockError) throw lockError;
+    const grepFilter = Array.isArray(selectedTags) && selectedTags.length > 0 ? selectedTags.join("|") : "";
+    const suiteInput = validSuites.length > 1 ? validSuites.join(",") : row.slug;
+
+    // Entorno ocupado (run activo o staging reservado): la petición entra en la cola y se lanza sola cuando quede libre.
+    const enqueue = async () => {
+      const { count: waiting } = await db.from("runs").select("id", { count: "exact", head: true }).eq("status", "waiting");
+      if ((waiting ?? 0) >= MAX_WAITING) {
+        return json(409, { error: "La cola está llena; inténtalo en unos minutos" }, { "Retry-After": "60" });
+      }
+      const { data: queued, error: qErr } = await db
+        .from("runs")
+        .insert({ suite_id: row.id, status: "waiting", queue_suite: suiteInput, queue_grep: grepFilter })
+        .select("id")
+        .single<{ id: string }>();
+      if (qErr) throw qErr;
+      const { error: rErr } = await db.from("run_requests").insert({ run_id: queued.id, ip_hash: ipHash });
+      if (rErr) throw rErr;
+      await pruneOldRunsForTool(db, row.tool_id);
+      await advanceQueue(db); // por si el entorno se liberó mientras tanto
+      return json(202, { run_id: queued.id, queued: true, position: (waiting ?? 0) + 1 });
+    };
     if (lock?.holder && lock.expires_at && new Date(lock.expires_at) > new Date()) {
-      return json(409, { error: "El entorno de pruebas está ocupado; inténtalo en unos minutos" }, { "Retry-After": "60" });
+      return await enqueue();
     }
 
     const { data: run, error: runError } = await db
@@ -150,9 +172,7 @@ export async function POST(request: Request) {
       .single<{ id: string }>();
 
     if (runError) {
-      if (runError.code === "23505") {
-        return json(409, { error: "Ya hay una ejecución en curso; inténtalo en unos minutos" }, { "Retry-After": "60" });
-      }
+      if (runError.code === "23505") return await enqueue();
       throw runError;
     }
 
@@ -160,9 +180,6 @@ export async function POST(request: Request) {
     if (reqError) throw reqError;
 
     try {
-      const grepFilter = Array.isArray(selectedTags) && selectedTags.length > 0 ? selectedTags.join("|") : "";
-      const suiteInput = validSuites.length > 1 ? validSuites.join(",") : row.slug;
-
       await dispatchWorkflow({
         repo: row.tools.github_repo,
         workflowFile: row.tools.workflow_file,

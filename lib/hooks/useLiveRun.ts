@@ -4,6 +4,7 @@ import { supabaseBrowser } from '@/lib/supabase/browser';
 export function useLiveRun(runId: string) {
   const [status, setStatus] = useState('queued');
   const [events, setEvents] = useState<any[]>([]);
+  const [position, setPosition] = useState<number | null>(null);
 
   useEffect(() => {
     supabaseBrowser.from('runs').select('status').eq('id', runId).single()
@@ -20,6 +21,18 @@ export function useLiveRun(runId: string) {
       )
       .subscribe();
 
+    // Run en cola: se pide al servidor que lance el siguiente si el entorno está libre (idempotente) y se calcula la posición.
+        const tick = async () => {
+      const { data: me } = await supabaseBrowser.from('runs').select('status, created_at').eq('id', runId).single();
+      if (!me || me.status !== 'waiting') { setPosition(null); return; }
+      const { count } = await supabaseBrowser.from('runs').select('id', { count: 'exact', head: true })
+        .eq('status', 'waiting').lt('created_at', me.created_at);
+      setPosition((count ?? 0) + 1);
+      fetch('/api/runs/advance', { method: 'POST' }).catch(() => {});
+    };
+    tick();
+    const timer = setInterval(tick, 8000);
+
     const eventsSub = supabaseBrowser
       .channel(`events_${runId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'run_events', filter: `run_id=eq.${runId}` }, 
@@ -28,10 +41,11 @@ export function useLiveRun(runId: string) {
       .subscribe();
 
     return () => {
+      clearInterval(timer);
       supabaseBrowser.removeChannel(runSub);
       supabaseBrowser.removeChannel(eventsSub);
     };
   }, [runId]);
 
-  return { status, events };
+  return { status, events, position };
 }

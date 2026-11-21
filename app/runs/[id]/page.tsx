@@ -8,7 +8,7 @@ import { useLiveRun } from '@/lib/hooks/useLiveRun';
 function LiveRunContent() {
   const params = useParams();
   const runId = params.id as string;
-  const { status, events } = useLiveRun(runId);
+  const { status, events, position } = useLiveRun(runId);
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-8 py-6 space-y-6">
@@ -27,9 +27,16 @@ function LiveRunContent() {
               : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
           }`}
         >
-          ● {status}
+          ● {status === 'waiting' ? 'en cola' : status}
         </span>
       </div>
+
+      {status === 'waiting' && (
+        <div className="rounded-[24px] bg-amber-500/10 border border-amber-500/30 p-5 text-sm">
+          <p className="font-medium">Tu ejecución está en cola{position ? ` (posición ${position})` : ''}.</p>
+          <p className="text-xs text-[var(--text-secondary)] mt-1">El entorno de pruebas se comparte y solo admite un run a la vez. Se lanzará sola cuando quede libre; puedes dejar esta página abierta.</p>
+        </div>
+      )}
 
       <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6">
         <div className="flex items-center justify-between mb-4">

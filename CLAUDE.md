@@ -361,6 +361,11 @@ La web ya copia: cabecera con navegación en píldora, modo noche, botón negro 
   (npx tsx scripts/qa-lab.ts bug|comentar|informe, con LAB_URL/LAB_SERVICE_KEY de .qa-lab.env).
   Gotcha: next.config tiene cacheComponents -> NO usar `export const dynamic`; el contenido con datos va en un componente async
   dentro de <Suspense> (como app/runs/[id]/results). Un `dynamic` rompe el build y Vercel deja la versión anterior. Migración supabase/migrations/20261121000000_bugs_informes.sql (idempotente, con un bug de ejemplo).
+- COLA DE EJECUCIONES (21-nov, Supabase, sin MQTT): si hay un run activo o el staging está reservado, POST /api/runs guarda el run como
+  `waiting` (202 {run_id, queued, position}; máx. 5 en cola, caducan a los 30 min) con queue_suite/queue_grep. lib/queue.ts advanceQueue()
+  lanza el más antiguo cuando el entorno queda libre; es idempotente (índice one_active_run) y se dispara desde POST /api/runs/advance (pública),
+  que llaman los runners al terminar (send-to-supabase.js notifyQueue, con reintentos mientras el staging siga reservado) y la página del run
+  en espera (cada 8 s). Migración 20261121010000_cola_de_runs.sql (estado `waiting`): aplicarla ANTES de desplegar.
 - SUITE J "Demo de fallos" (slug j-demo-fallos, columna J del mapa): escenarios que FALLAN A PROPÓSITO para enseñar un reporte de bug.
   Front (Playwright, Selenium x2, Cucumber, Cypress): 7 casos TC-J01..J07 (requisitos inexistentes: ver partidas de otro equipo, panel de
   métricas, botón Crear partida...). Newman/Bruno/Karate: 3 casos (spec.js); JMeter: PERF-17..19 con umbral irreal. Los run.sh de

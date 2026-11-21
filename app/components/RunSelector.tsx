@@ -179,7 +179,7 @@ export default function RunSelector({
         }),
       });
 
-      if (res.status === 201) {
+      if (res.status === 201 || res.status === 202) {
         const { run_id } = await res.json();
         window.location.href = `/runs/${run_id}`;
       } else {
