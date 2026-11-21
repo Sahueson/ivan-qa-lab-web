@@ -1,10 +1,9 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { ESTADOS, SEVERIDADES, estadoCls } from './labels';
 
-export const dynamic = 'force-dynamic';
-
-export default async function BugsPage() {
+async function BugsPageContent() {
   const { data } = await getAdminClient()
     .from('bugs')
     .select('id, title, severity, status, tool_slug, suite_slug, created_at, bug_comments(count)')
@@ -43,5 +42,13 @@ export default async function BugsPage() {
         })}
       </div>
     </div>
+  );
+}
+
+export default function BugsPage() {
+  return (
+    <Suspense fallback={<p className="max-w-5xl mx-auto p-8 text-sm text-[var(--text-secondary)]">Cargando…</p>}>
+      <BugsPageContent />
+    </Suspense>
   );
 }

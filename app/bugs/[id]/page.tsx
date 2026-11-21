@@ -1,11 +1,10 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { ESTADOS, SEVERIDADES, TIPOS, estadoCls } from '../labels';
 
-export const dynamic = 'force-dynamic';
-
-export default async function BugPage({ params }: { params: Promise<{ id: string }> }) {
+async function BugPageContent({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const bugId = Number(id);
   if (!Number.isInteger(bugId)) notFound();
@@ -53,5 +52,13 @@ export default async function BugPage({ params }: { params: Promise<{ id: string
       </ol>
 
     </div>
+  );
+}
+
+export default function BugPage({ params }: { params: Promise<{ id: string }> }) {
+  return (
+    <Suspense fallback={<p className="max-w-5xl mx-auto p-8 text-sm text-[var(--text-secondary)]">Cargando…</p>}>
+      <BugPageContent params={params} />
+    </Suspense>
   );
 }

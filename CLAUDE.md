@@ -357,8 +357,10 @@ La web ya copia: cabecera con navegación en píldora, modo noche, botón negro 
   shared/publish-results.js (`evidence_data`), sin cabeceras de clave, tokens, contraseñas, emails ni UUID. La web lo enlaza como
   "Ver petición y respuesta".
 - MINI JIRA E INFORMES (21-nov): /bugs (bugs + comentarios, tablas bugs/bug_comments) e /informes (back/front/rendimiento,
-  tabla informes con versiones guardadas). Lectura pública; escribir exige QA_ADMIN_KEY (variable de Vercel) en acciones de servidor
-  (app/bugs/actions.ts). Migración supabase/migrations/20261121000000_bugs_informes.sql (idempotente, con un bug de ejemplo).
+  tabla informes con versiones guardadas). La web es de SOLO LECTURA; los bugs, comentarios e informes guardados se gestionan con scripts/qa-lab.ts
+  (npx tsx scripts/qa-lab.ts bug|comentar|informe, con LAB_URL/LAB_SERVICE_KEY de .qa-lab.env).
+  Gotcha: next.config tiene cacheComponents -> NO usar `export const dynamic`; el contenido con datos va en un componente async
+  dentro de <Suspense> (como app/runs/[id]/results). Un `dynamic` rompe el build y Vercel deja la versión anterior. Migración supabase/migrations/20261121000000_bugs_informes.sql (idempotente, con un bug de ejemplo).
 - Los 6 secretos de cada repo los pone poner-secretos.sh (raíz de ivan-qa-lab, local) desde .qa-lab.env. Gotchas: run.sh sin bit de
   ejecución en Windows -> el workflow usa `bash ./run.sh`; jmeter.bat falla con rutas con espacios en Windows (run.sh lanza el JAR);
   Karate 2.x (CLI) y 1.x (JAR) generan informes en directorios distintos (el conversor busca los json de forma recursiva).

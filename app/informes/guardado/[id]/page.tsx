@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getAdminClient } from '@/lib/supabase/admin';
@@ -5,9 +6,7 @@ import type { InformeData } from '@/lib/informes';
 import InformeView from '@/app/components/InformeView';
 import PrintButton from '@/app/components/PrintButton';
 
-export const dynamic = 'force-dynamic';
-
-export default async function InformeGuardadoPage({ params }: { params: Promise<{ id: string }> }) {
+async function InformeGuardadoPageContent({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const n = Number(id);
   if (!Number.isInteger(n)) notFound();
@@ -22,5 +21,13 @@ export default async function InformeGuardadoPage({ params }: { params: Promise<
       </div>
       <InformeView data={data.data as InformeData} />
     </div>
+  );
+}
+
+export default function InformeGuardadoPage({ params }: { params: Promise<{ id: string }> }) {
+  return (
+    <Suspense fallback={<p className="max-w-5xl mx-auto p-8 text-sm text-[var(--text-secondary)]">Cargando…</p>}>
+      <InformeGuardadoPageContent params={params} />
+    </Suspense>
   );
 }

@@ -1,10 +1,9 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { GRUPOS, type Grupo } from '@/lib/informes';
 
-export const dynamic = 'force-dynamic';
-
-export default async function InformesPage() {
+async function InformesPageContent() {
   const { data: guardados } = await getAdminClient()
     .from('informes')
     .select('id, grupo, created_at')
@@ -41,5 +40,13 @@ export default async function InformesPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+export default function InformesPage() {
+  return (
+    <Suspense fallback={<p className="max-w-5xl mx-auto p-8 text-sm text-[var(--text-secondary)]">Cargando…</p>}>
+      <InformesPageContent />
+    </Suspense>
   );
 }
