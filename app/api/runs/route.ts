@@ -4,9 +4,8 @@ import { dispatchWorkflow } from "@/lib/github/dispatch";
 
 const MAX_RUNS_PER_IP_PER_HOUR = 3;
 const MAX_RUNS_PER_DAY = 50;
-// Se guardan las últimas runs de CADA suite (no de toda la herramienta), para que el Mapa de suites pueda
-// mostrar el último resultado de las 9 suites de una herramienta.
-const MAX_STORED_RUNS_PER_SUITE = 2;
+// Una run = un lanzamiento (puede mezclar tests de varias suites). Se guardan las 4 últimas de cada herramienta.
+const MAX_STORED_RUNS_PER_TOOL = 4;
 const SLUG = /^[a-z0-9-]{1,40}$/;
 
 type SuiteRow = {
@@ -44,19 +43,13 @@ async function pruneOldRunsForTool(db: ReturnType<typeof getAdminClient>, toolId
 
   const { data: toolRuns } = await db
     .from("runs")
-    .select("id, suite_id")
+    .select("id")
     .in("suite_id", suiteIds)
     .order("created_at", { ascending: false });
 
   if (!toolRuns) return;
 
-  const seen = new Map<string, number>();
-  const idsToDelete: string[] = [];
-  for (const r of toolRuns) {
-    const n = (seen.get(r.suite_id) ?? 0) + 1;
-    seen.set(r.suite_id, n);
-    if (n > MAX_STORED_RUNS_PER_SUITE) idsToDelete.push(r.id);
-  }
+  const idsToDelete = toolRuns.slice(MAX_STORED_RUNS_PER_TOOL).map((r) => r.id);
   if (idsToDelete.length === 0) return;
 
   // 1. Limpiar capturas del bucket 'evidence' asociadas a esas runs

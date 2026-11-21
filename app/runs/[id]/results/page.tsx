@@ -161,7 +161,7 @@ async function ResultsContent({ params }: { params: Promise<{ id: string }> }) {
                       rel="noreferrer"
                       className="px-3 py-1 rounded-full bg-[var(--bg-surface-muted)] border border-[var(--border-subtle)] text-xs font-medium hover:opacity-80 transition inline-block"
                     >
-                      Ver captura ↗
+                      {test.evidence_url.endsWith(".json") ? "Ver petición y respuesta ↗" : "Ver captura ↗"}
                     </a>
                   ) : (
                     <span className="text-[var(--text-secondary)] text-xs">-</span>
