@@ -87,8 +87,8 @@ export default function Navbar({ tools }: { tools: NavTool[] }) {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-[var(--bg-canvas)]/85 print:hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 h-20 flex items-center justify-between gap-4">
+    <header className="md:sticky md:top-0 z-40 w-full backdrop-blur-md bg-[var(--bg-canvas)]/85 print:hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 h-16 md:h-20 flex items-center justify-between gap-4">
         {/* Marca izquierda limpia */}
         <Link href="/" className="flex items-center gap-3 shrink-0">
           <div className="w-10 h-10 rounded-full bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] flex items-center justify-center font-bold text-sm tracking-tighter">

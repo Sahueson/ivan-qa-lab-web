@@ -119,8 +119,8 @@ export default async function SuiteGrid() {
 
       <div className="overflow-x-auto">
         <div
-          className="grid gap-1.5 min-w-[800px] items-center"
-          style={{ gridTemplateColumns: `136px repeat(${columns.length}, minmax(0, 1fr))` }}
+          className="grid gap-1.5 items-center"
+          style={{ gridTemplateColumns: `124px repeat(${columns.length}, minmax(56px, 1fr))`, minWidth: 124 + columns.length * 62 }}
         >
           <span />
           {columns.map(([letter, name]) => (
@@ -135,7 +135,7 @@ export default async function SuiteGrid() {
 
           {tools.map((tool) => (
             <div key={tool.id} className="contents">
-              <Link href={`/${tool.slug}`} className="text-sm font-medium truncate hover:underline pr-2">
+              <Link href={`/${tool.slug}`} className="sticky left-0 z-10 bg-[var(--bg-surface)] text-sm font-medium truncate hover:underline pr-2">
                 {tool.name}
               </Link>
               {columns.map(([letter]) => {

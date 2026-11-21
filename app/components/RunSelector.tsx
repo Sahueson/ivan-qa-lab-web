@@ -455,7 +455,7 @@ export default function RunSelector({
               </p>
             </div>
           ) : (
-            <div className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
+            <div className="space-y-2.5 sm:max-h-[420px] sm:overflow-y-auto sm:pr-1">
               {visibleTests.map((test) => {
                 const checked = selectedTestIds.includes(test.id);
                 return (
@@ -475,8 +475,8 @@ export default function RunSelector({
                         className="h-4 w-4 accent-neutral-900 rounded shrink-0"
                       />
                       <div className="min-w-0">
-                        <p className="font-medium text-sm truncate">{test.name}</p>
-                        <p className="text-xs text-[var(--text-secondary)] font-mono truncate mt-0.5">
+                        <p className="font-medium text-sm break-words sm:truncate">{test.name}</p>
+                        <p className="hidden sm:block text-xs text-[var(--text-secondary)] font-mono truncate mt-0.5">
                           {test.filePath || test.suiteSlug}
                           {test.tag ? ` · ${test.tag}` : ''}
                         </p>

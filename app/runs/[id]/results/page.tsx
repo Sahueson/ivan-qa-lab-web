@@ -77,26 +77,26 @@ async function ResultsContent({ params }: { params: Promise<{ id: string }> }) {
       </div>
 
       {/* 4 Tarjetas KPI estilo Reports */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-[24px] bg-[var(--bg-hero)] text-[var(--text-hero)] border border-[var(--border-subtle)] p-6 flex flex-col justify-between min-h-[150px]">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="rounded-[24px] bg-[var(--bg-hero)] text-[var(--text-hero)] border border-[var(--border-subtle)] p-4 sm:p-6 flex flex-col justify-between min-h-[120px] sm:min-h-[150px]">
           <span className="text-xs opacity-70">Tasa de éxito</span>
           <span className="text-3xl font-semibold tracking-tight">{passRate}%</span>
           <span className="text-xs opacity-60">{summary.passed} de {summary.total} tests</span>
         </div>
 
-        <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6 flex flex-col justify-between min-h-[150px]">
+        <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-4 sm:p-6 flex flex-col justify-between min-h-[120px] sm:min-h-[150px]">
           <span className="text-xs text-[var(--text-secondary)]">Pasados</span>
           <span className="text-3xl font-semibold text-emerald-600 dark:text-emerald-400">{summary.passed}</span>
           <span className="text-xs text-[var(--text-secondary)]">Aserciones correctas</span>
         </div>
 
-        <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6 flex flex-col justify-between min-h-[150px]">
+        <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-4 sm:p-6 flex flex-col justify-between min-h-[120px] sm:min-h-[150px]">
           <span className="text-xs text-[var(--text-secondary)]">Fallados</span>
           <span className="text-3xl font-semibold text-red-600 dark:text-red-400">{summary.failed}</span>
           <span className="text-xs text-[var(--text-secondary)]">Requieren revisión</span>
         </div>
 
-        <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6 flex flex-col justify-between min-h-[150px]">
+        <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-4 sm:p-6 flex flex-col justify-between min-h-[120px] sm:min-h-[150px]">
           <span className="text-xs text-[var(--text-secondary)]">Duración total</span>
           <span className="text-3xl font-semibold">{(summary.duration_ms / 1000).toFixed(1)}s</span>
           <span className="text-xs text-[var(--text-secondary)]">Tiempo neto suite</span>

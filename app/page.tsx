@@ -173,8 +173,8 @@ async function StudioDashboard() {
       </div>
 
       {/* 4 Tarjetas KPI (La primera destacada en negro carbón como en Talmo) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-[24px] bg-[var(--bg-hero)] text-[var(--text-hero)] border border-[var(--border-subtle)] p-6 flex flex-col justify-between min-h-[156px]">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="col-span-2 lg:col-span-1 rounded-[24px] bg-[var(--bg-hero)] text-[var(--text-hero)] border border-[var(--border-subtle)] p-5 sm:p-6 flex flex-col justify-between min-h-[130px] sm:min-h-[156px]">
           <div className="flex items-center justify-between text-xs opacity-70">
             <span>Estabilidad reciente</span>
             <span>Últimos runs</span>
@@ -191,19 +191,19 @@ async function StudioDashboard() {
           </div>
         </div>
 
-        <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6 flex flex-col justify-between min-h-[156px]">
+        <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-4 sm:p-6 flex flex-col justify-between min-h-[120px] sm:min-h-[156px]">
           <span className="text-xs text-[var(--text-secondary)]">Ejecuciones recientes</span>
           <span className="text-3xl font-semibold tracking-tight">{recentRuns.length}</span>
           <span className="text-xs text-[var(--text-secondary)]">{finishedCount} completadas con éxito</span>
         </div>
 
-        <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6 flex flex-col justify-between min-h-[156px]">
+        <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-4 sm:p-6 flex flex-col justify-between min-h-[120px] sm:min-h-[156px]">
           <span className="text-xs text-[var(--text-secondary)]">Suites disponibles</span>
           <span className="text-3xl font-semibold tracking-tight">9</span>
           <span className="text-xs text-[var(--text-secondary)]">Módulos A – I configurados</span>
         </div>
 
-        <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6 flex flex-col justify-between min-h-[156px]">
+        <div className="col-span-2 lg:col-span-1 rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-4 sm:p-6 flex flex-col justify-between min-h-[120px] sm:min-h-[156px]">
           <span className="text-xs text-[var(--text-secondary)]">Tiempo medio arranque</span>
           <span className="text-3xl font-semibold tracking-tight">~39s</span>
           <span className="text-xs text-[var(--text-secondary)]">GitHub Actions Runner</span>
@@ -229,7 +229,7 @@ async function StudioDashboard() {
               <Link
                 key={tool.id}
                 href={`/${tool.slug}`}
-                className="group p-5 rounded-2xl bg-[var(--bg-surface-muted)] border border-[var(--border-subtle)] hover:border-[var(--text-primary)] transition flex flex-col justify-between gap-4"
+                className="group p-4 sm:p-5 rounded-2xl bg-[var(--bg-surface-muted)] border border-[var(--border-subtle)] hover:border-[var(--text-primary)] transition flex flex-col justify-between gap-4"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-base capitalize">{tool.name || tool.slug}</span>
@@ -237,8 +237,8 @@ async function StudioDashboard() {
                     {tool.enabled !== false ? 'Activo' : 'Inactivo'}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-xs text-[var(--text-secondary)]">
-                  <span>Configurar tags y lanzar</span>
+                <div className="hidden sm:flex items-center justify-between text-xs text-[var(--text-secondary)]">
+                  <span>Elegir suite y lanzar</span>
                   <span className="group-hover:translate-x-1 transition-transform">→</span>
                 </div>
               </Link>
