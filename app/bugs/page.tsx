@@ -21,9 +21,6 @@ export default async function BugsPage() {
             Registro de incidencias encontradas por las pruebas: {abiertos} abiertas de {bugs.length}. Lectura pública.
           </p>
         </div>
-        <Link href="/bugs/nuevo" className="px-4 py-2 rounded-full bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] text-sm font-medium self-start">
-          + Nuevo bug
-        </Link>
       </div>
       <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] divide-y divide-[var(--border-subtle)]">
         {bugs.length === 0 && <p className="p-6 text-sm text-[var(--text-secondary)]">Todavía no hay bugs registrados.</p>}

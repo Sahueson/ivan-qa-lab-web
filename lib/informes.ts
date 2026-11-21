@@ -1,5 +1,4 @@
-import "server-only";
-import { getAdminClient } from "@/lib/supabase/admin";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type Grupo = "back" | "front" | "rendimiento";
 
@@ -44,8 +43,7 @@ export type InformeData = {
 type RunRow = { id: string; suite_id: string; created_at: string };
 
 // Último run terminado de cada suite de cada herramienta del grupo (solo existen las runs guardadas: 4 por herramienta).
-export async function buildInforme(grupo: Grupo): Promise<InformeData> {
-  const db = getAdminClient();
+export async function buildInforme(db: SupabaseClient, grupo: Grupo): Promise<InformeData> {
   const { data: tools } = await db.from("tools").select("id, slug, name").in("slug", GRUPOS[grupo].herramientas);
   const out: InformeTool[] = [];
   const lentos: { test: string; ms: number }[] = [];

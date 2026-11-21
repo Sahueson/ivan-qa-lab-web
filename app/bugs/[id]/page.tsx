@@ -1,8 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getAdminClient } from '@/lib/supabase/admin';
-import AdminForm, { inputCls } from '@/app/components/AdminForm';
-import { comentarBug } from '../actions';
 import { ESTADOS, SEVERIDADES, TIPOS, estadoCls } from '../labels';
 
 export const dynamic = 'force-dynamic';
@@ -54,27 +52,6 @@ export default async function BugPage({ params }: { params: Promise<{ id: string
         {(comments ?? []).length === 0 && <li className="text-sm text-[var(--text-secondary)]">Sin comentarios todavía.</li>}
       </ol>
 
-      <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6">
-        <AdminForm action={comentarBug} submit="Añadir">
-          <input type="hidden" name="bug_id" value={bug.id} />
-          <textarea name="body" required rows={3} maxLength={2000} placeholder="Comentario, resolución o motivo de reapertura" className={inputCls} />
-          <div className="grid sm:grid-cols-3 gap-3">
-            <select name="kind" defaultValue="comentario" className={inputCls}>
-              <option value="comentario">Comentario</option>
-              <option value="resolucion">Resolución (pasa a resuelto)</option>
-              <option value="reapertura">Reapertura (pasa a abierto)</option>
-            </select>
-            <select name="status" defaultValue="" className={inputCls}>
-              <option value="">Estado: automático</option>
-              <option value="abierto">Abierto</option>
-              <option value="en_progreso">En progreso</option>
-              <option value="resuelto">Resuelto</option>
-              <option value="cerrado">Cerrado</option>
-            </select>
-            <input name="author" placeholder="Autor (QA)" maxLength={40} className={inputCls} />
-          </div>
-        </AdminForm>
-      </div>
     </div>
   );
 }
