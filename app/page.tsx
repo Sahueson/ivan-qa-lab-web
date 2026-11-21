@@ -139,19 +139,42 @@ function LastRunPanel({ runs }: { runs: RunRow[] }) {
 async function StudioDashboard() {
   const db = getAdminClient();
 
-  const [toolsRes, runsRes] = await Promise.all([
+  const [toolsRes, runsRes, suitesRes, activeRes, waitingRes] = await Promise.all([
     db.from('tools').select('*').order('name', { ascending: true }),
     db
       .from('runs')
       .select('id, status, created_at, suites(slug, tools(name, slug)), run_summary(total, passed, failed, duration_ms)')
       .order('created_at', { ascending: false })
-      .limit(6),
+      .limit(14),
+    db.from('suites').select('slug'),
+    db.from('runs').select('id', { count: 'exact', head: true }).in('status', ['queued', 'running']),
+    db.from('runs').select('id', { count: 'exact', head: true }).eq('status', 'waiting'),
   ]);
 
   const tools = toolsRes.data || [];
-  const recentRuns = runsRes.data || [];
-  const finishedCount = recentRuns.filter((r) => r.status === 'finished').length;
-  const passRate = recentRuns.length > 0 ? Math.round((finishedCount / recentRuns.length) * 100) : 100;
+  const allRuns = (runsRes.data || []) as any[];
+  const recentRuns = allRuns.slice(0, 6); // lo último que pasó (panel "Último run")
+  // Las cifras de salud no cuentan la Demo de fallos (falla a propósito) y "superada" = terminó Y no falló ningún test.
+  const realRuns = allRuns.filter((r) => r.suites?.slug !== 'j-demo-fallos').slice(0, 6);
+  const failedOf = (r: any) => {
+    const sm = Array.isArray(r.run_summary) ? r.run_summary[0] : r.run_summary;
+    return sm ? sm.failed : 0;
+  };
+  const passedRuns = realRuns.filter((r) => r.status === 'finished' && failedOf(r) === 0);
+  const passRate = realRuns.length > 0 ? Math.round((passedRuns.length / realRuns.length) * 100) : 0;
+  const suiteCount = new Set((suitesRes.data || []).map((x: any) => x.slug).filter((x: string) => x !== 'j-demo-fallos')).size;
+  const activeCount = activeRes.count ?? 0;
+  const waitingCount = waitingRes.count ?? 0;
+  const lastReal = realRuns[0];
+  const lastHealth = !lastReal
+    ? { text: 'Sin runs', cls: 'bg-white/10 text-white/70' }
+    : lastReal.status === 'finished' && failedOf(lastReal) === 0
+      ? { text: 'Último run superado', cls: 'bg-emerald-500/20 text-emerald-400' }
+      : lastReal.status === 'finished'
+        ? { text: 'Último run con fallos', cls: 'bg-amber-500/20 text-amber-300' }
+        : ['queued', 'running', 'waiting'].includes(lastReal.status)
+          ? { text: 'En curso', cls: 'bg-sky-500/20 text-sky-300' }
+          : { text: 'Último run fallido', cls: 'bg-red-500/20 text-red-300' };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 space-y-8">
@@ -160,13 +183,14 @@ async function StudioDashboard() {
         <div>
           <h1 className="text-4xl font-semibold tracking-tight">Studio</h1>
           <p className="text-sm text-[var(--text-secondary)] mt-1">
-            Entorno staging conectado · {tools.length} herramientas registradas
+            Entorno de pruebas: staging de Tactical Calendar · {tools.length} herramientas
           </p>
         </div>
         <div className="flex items-center gap-2">
           <span className="px-3.5 py-1.5 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs font-medium flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            Workers listos
+            <span className={`w-2 h-2 rounded-full ${activeCount > 0 ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
+            {activeCount > 0 ? 'Ejecutando una prueba' : 'Libre para lanzar'}
+            {waitingCount > 0 ? ` · ${waitingCount} en cola` : ''}
           </span>
         </div>
       </div>
@@ -180,32 +204,29 @@ async function StudioDashboard() {
           </div>
           <div className="my-2 flex items-end justify-between gap-3">
             <span className="text-3xl font-semibold tracking-tight">{passRate}%</span>
-            <Sparkline statuses={[...recentRuns].reverse().map((r) => r.status)} />
+            <Sparkline statuses={[...realRuns].reverse().map((r) => (r.status === 'finished' && failedOf(r) > 0 ? 'with_failures' : r.status))} />
           </div>
           <div className="flex items-center gap-2 text-xs">
-            <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-medium">
-              Operativo
-            </span>
-            <span className="opacity-60">Pipeline CI/CD</span>
+            <span className={`px-2 py-0.5 rounded-full font-medium ${lastHealth.cls}`}>{lastHealth.text}</span>
           </div>
         </div>
 
         <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-4 sm:p-6 flex flex-col justify-between min-h-[120px] sm:min-h-[156px]">
           <span className="text-xs text-[var(--text-secondary)]">Ejecuciones recientes</span>
-          <span className="text-3xl font-semibold tracking-tight">{recentRuns.length}</span>
-          <span className="text-xs text-[var(--text-secondary)]">{finishedCount} completadas con éxito</span>
+          <span className="text-3xl font-semibold tracking-tight">{realRuns.length}</span>
+          <span className="text-xs text-[var(--text-secondary)]">{passedRuns.length} superadas sin fallos</span>
         </div>
 
         <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-4 sm:p-6 flex flex-col justify-between min-h-[120px] sm:min-h-[156px]">
           <span className="text-xs text-[var(--text-secondary)]">Suites disponibles</span>
-          <span className="text-3xl font-semibold tracking-tight">9</span>
-          <span className="text-xs text-[var(--text-secondary)]">Módulos A – I configurados</span>
+          <span className="text-3xl font-semibold tracking-tight">{suiteCount}</span>
+          <span className="text-xs text-[var(--text-secondary)]">Suites reales (A–I) por herramienta</span>
         </div>
 
         <div className="col-span-2 lg:col-span-1 rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-4 sm:p-6 flex flex-col justify-between min-h-[120px] sm:min-h-[156px]">
           <span className="text-xs text-[var(--text-secondary)]">Tiempo medio arranque</span>
           <span className="text-3xl font-semibold tracking-tight">~39s</span>
-          <span className="text-xs text-[var(--text-secondary)]">GitHub Actions Runner</span>
+          <span className="text-xs text-[var(--text-secondary)]">Medido en GitHub Actions</span>
         </div>
       </div>
 

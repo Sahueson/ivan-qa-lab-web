@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useLiveRun } from '@/lib/hooks/useLiveRun';
+import { runStatusLabel } from '@/lib/labels';
 
 function LiveRunContent() {
   const params = useParams();
@@ -27,7 +28,7 @@ function LiveRunContent() {
               : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
           }`}
         >
-          ● {status === 'waiting' ? 'en cola' : status}
+          ● {runStatusLabel(status)}
         </span>
       </div>
 
@@ -46,7 +47,13 @@ function LiveRunContent() {
 
         <div className="rounded-2xl bg-[#111211] text-neutral-200 p-5 font-mono text-xs sm:text-sm min-h-[340px] max-h-[500px] overflow-y-auto space-y-2.5">
           {events.length === 0 ? (
-            <p className="text-neutral-500 italic">Esperando respuesta del runner de GitHub Actions...</p>
+            <p className="text-neutral-500 italic">
+              {status === 'finished' || status === 'failed' || status === 'timeout'
+                ? 'La ejecución ha terminado. Las herramientas publican su resultado completo al acabar, sin eventos intermedios: míralo en el informe.'
+                : status === 'waiting'
+                  ? 'Esperando turno: el entorno de pruebas solo admite una ejecución a la vez.'
+                  : 'El runner de GitHub Actions está preparando y ejecutando las pruebas. El resultado aparece aquí al terminar.'}
+            </p>
           ) : (
             events.map((ev, idx) => (
               <div key={idx} className="flex gap-3 leading-relaxed">
@@ -65,7 +72,7 @@ function LiveRunContent() {
         </div>
       </div>
 
-      {status === 'finished' && (
+      {(status === 'finished' || status === 'failed' || status === 'timeout') && (
         <div className="flex justify-end">
           <Link
             href={`/runs/${runId}/results`}

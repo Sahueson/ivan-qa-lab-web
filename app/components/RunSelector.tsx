@@ -58,6 +58,8 @@ export default function RunSelector({
   const suiteLabel = (slug: string, name?: string) => slug === 'all' ? 'Todas las suites' : `${slug.charAt(0).toUpperCase()} · ${name ?? slug}`;
   const allTests = testsByTool[activeToolSlug] || [];
   // "Seleccionar todas" no incluye la Demo de fallos (falla a propósito): solo se lanza eligiéndola a mano.
+  // si todos los tests viven en el mismo fichero (colección de Newman, plan de JMeter) la ruta no aporta nada
+  const sameFile = allTests.length > 1 && new Set(allTests.map((t) => t.filePath)).size === 1;
   const selectableTests = allTests.filter((t) => t.suiteSlug !== 'j-demo-fallos');
 
   const [activeSuiteSlug, setActiveSuiteSlug] = useState<string>(suites[0]?.slug || 'a-auth');
@@ -477,7 +479,7 @@ export default function RunSelector({
                       />
                       <div className="min-w-0">
                         <p className="font-medium text-sm break-words sm:truncate">{test.name}</p>
-                        <p className="hidden sm:block text-xs text-[var(--text-secondary)] font-mono truncate mt-0.5">
+                        <p className={`${sameFile ? 'hidden' : 'hidden sm:block'} text-xs text-[var(--text-secondary)] font-mono truncate mt-0.5`}>
                           {test.filePath || test.suiteSlug}
                           {test.tag ? ` · ${test.tag}` : ''}
                         </p>

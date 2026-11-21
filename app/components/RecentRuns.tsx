@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { runStatusLabel } from '@/lib/labels';
 import { getAdminClient } from '@/lib/supabase/admin';
 
 // Últimas ejecuciones de una o varias herramientas (en Selenium, Java y Python juntas).
@@ -57,7 +58,7 @@ export default async function RecentRuns({ toolIds, title = 'Últimas ejecucione
                       : 'bg-sky-500/15 text-sky-600 dark:text-sky-400'
                   }`}
                 >
-                  {run.status}
+                  {runStatusLabel(run.status)}
                 </span>
               </Link>
             );

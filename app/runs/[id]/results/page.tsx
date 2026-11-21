@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { getAdminClient } from '@/lib/supabase/admin';
 import Link from 'next/link';
+import { testStatusLabel } from '@/lib/labels';
 import { caseCode, compareCaseNames } from '@/lib/case-order';
 import AreaChart from '@/app/components/AreaChart';
 
@@ -53,7 +54,7 @@ async function ResultsContent({ params }: { params: Promise<{ id: string }> }) {
     <div className="max-w-6xl mx-auto px-4 sm:px-8 py-6 space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-semibold tracking-tight">Reports</h1>
+          <h1 className="text-4xl font-semibold tracking-tight">Resultados</h1>
           <p className="text-xs text-[var(--text-secondary)] font-mono mt-1">RUN ID: {runId}</p>
         </div>
         <div className="flex flex-wrap gap-2 self-start">
@@ -175,7 +176,7 @@ async function ResultsContent({ params }: { params: Promise<{ id: string }> }) {
                         : 'bg-neutral-500/15 text-neutral-500'
                     }`}
                   >
-                    {test.status}
+                    {testStatusLabel(test.status)}
                   </span>
                 </td>
                 <td className="p-5 text-[var(--text-secondary)] font-mono text-xs">
