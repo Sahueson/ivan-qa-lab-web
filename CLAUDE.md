@@ -356,5 +356,10 @@ La web ya copia: cabecera con navegación en píldora, modo noche, botón negro 
 - Los 6 secretos de cada repo los pone poner-secretos.sh (raíz de ivan-qa-lab, local) desde .qa-lab.env. Gotchas: run.sh sin bit de
   ejecución en Windows -> el workflow usa `bash ./run.sh`; jmeter.bat falla con rutas con espacios en Windows (run.sh lanza el JAR);
   Karate 2.x (CLI) y 1.x (JAR) generan informes en directorios distintos (el conversor busca los json de forma recursiva).
-- Verificación (20-nov noche): todas las suites de cada herramienta lanzadas una a una en CI contra STG (resultados en el Mapa).
+- Verificación (20/21-nov): las 9 suites de cada herramienta lanzadas UNA A UNA en CI contra STG (81 runs previstas; 63 hechas):
+  Playwright 70/70, Selenium Java 70/70, Selenium Python 70/70, Newman 57/57, Bruno 57/57, Karate 57/57, JMeter 16/16.
+  Pendientes: Cucumber y Cypress (faltan sus secretos en GitHub: poner-secretos.sh qa-cucumber qa-cypress).
+  Fallos que salieron en CI y no en local: Karate recibía la lista de features vacía (los arrays de Bash no sobreviven a
+  `export -f`) y el JAR 1.x no tiene la carpeta actual en el classpath (java -cp ".karate/karate.jar:.").
+  estimated_seconds de Newman, Bruno, Karate y JMeter = duración real del job + ~10 s (35-65 s por suite).
 - PENDIENTE: Appium (móvil) cuando exista la parte móvil de la web; ajustar estimated_seconds con lo medido en CI.
