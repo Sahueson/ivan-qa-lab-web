@@ -43,3 +43,8 @@ body {
   transition: background-color 0.25s ease, color 0.25s ease;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
+
+/* Icono del botón de modo día/noche: lo elige el CSS, no el estado de React (evita errores de hidratación). */
+.theme-icon-sun { display: none; }
+.dark .theme-icon-moon { display: none; }
+.dark .theme-icon-sun { display: block; }

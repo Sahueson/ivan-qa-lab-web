@@ -364,6 +364,9 @@ La web ya copia: cabecera con navegación en píldora, modo noche, botón negro 
   (npx tsx scripts/qa-lab.ts bug|comentar|informe, con LAB_URL/LAB_SERVICE_KEY de .qa-lab.env).
   Gotcha: next.config tiene cacheComponents -> NO usar `export const dynamic`; el contenido con datos va en un componente async
   dentro de <Suspense> (como app/runs/[id]/results). Un `dynamic` rompe el build y Vercel deja la versión anterior. Migración supabase/migrations/20261121000000_bugs_informes.sql (idempotente, con un bug de ejemplo).
+- HIDRATACIÓN (React #418): el HTML NO debe depender del tema guardado. ThemeProvider cambia el estado en un efecto; si un componente dentro de un
+  <Suspense> (la cabecera: NavbarServer) se hidrata después, ve el tema nuevo y no casa con el HTML del servidor. Solo ocurría en producción y con modo noche
+  guardado. Los iconos de día/noche van los dos y los elige el CSS (.theme-icon-*). Para reproducir: Chrome por CDP con localStorage qa-lab-theme=dark.
 - INFORME HTML POR RUN (21-nov): cada workflow termina con `make-report.js` (shared; HTML autónomo desde result.json, limpiado con sanitize.js) y
   peaceiris/actions-gh-pages que lo sube a la rama gh-pages del repo de la herramienta (destino <run_id>); GitHub Pages activado en los 8 repos. Newman usa
   htmlextra (--skipSensitiveData) y JMeter su dashboard (report/index.html existente: make-report no lo pisa). La página de resultados hace un HEAD a

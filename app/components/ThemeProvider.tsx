@@ -24,7 +24,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const toggleTheme = () => {
-    const next: Theme = theme === 'light' ? 'dark' : 'light';
+    const next: Theme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
     setTheme(next);
     localStorage.setItem('qa-lab-theme', next);
     document.documentElement.classList.toggle('dark', next === 'dark');
