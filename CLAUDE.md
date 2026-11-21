@@ -361,6 +361,10 @@ La web ya copia: cabecera con navegación en píldora, modo noche, botón negro 
   (npx tsx scripts/qa-lab.ts bug|comentar|informe, con LAB_URL/LAB_SERVICE_KEY de .qa-lab.env).
   Gotcha: next.config tiene cacheComponents -> NO usar `export const dynamic`; el contenido con datos va en un componente async
   dentro de <Suspense> (como app/runs/[id]/results). Un `dynamic` rompe el build y Vercel deja la versión anterior. Migración supabase/migrations/20261121000000_bugs_informes.sql (idempotente, con un bug de ejemplo).
+- INFORME HTML POR RUN (21-nov): cada workflow termina con `make-report.js` (shared; HTML autónomo desde result.json, limpiado con sanitize.js) y
+  peaceiris/actions-gh-pages que lo sube a la rama gh-pages del repo de la herramienta (destino <run_id>); GitHub Pages activado en los 8 repos. Newman usa
+  htmlextra (--skipSensitiveData) y JMeter su dashboard (report/index.html existente: make-report no lo pisa). La página de resultados hace un HEAD a
+  https://sahueson.github.io/<repo>/<run_id>/ y enseña "Ver informe HTML" si existe. Un informe NUNCA debe llevar cuerpos/cabeceras sin limpiar (es público).
 - COLA DE EJECUCIONES (21-nov, Supabase, sin MQTT): si hay un run activo o el staging está reservado, POST /api/runs guarda el run como
   `waiting` (202 {run_id, queued, position}; máx. 5 en cola, caducan a los 30 min) con queue_suite/queue_grep. lib/queue.ts advanceQueue()
   lanza el más antiguo cuando el entorno queda libre; es idempotente (índice one_active_run) y se dispara desde POST /api/runs/advance (pública),
