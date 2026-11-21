@@ -5,8 +5,10 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useLiveRun } from '@/lib/hooks/useLiveRun';
 import { runStatusLabel } from '@/lib/labels';
+import { useT } from '@/app/components/I18nProvider';
 
 function LiveRunContent() {
+  const t = useT();
   const params = useParams();
   const runId = params.id as string;
   const { status, events, position } = useLiveRun(runId);
@@ -15,7 +17,7 @@ function LiveRunContent() {
     <div className="max-w-5xl mx-auto px-4 sm:px-8 py-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Ejecución en vivo</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">{t('Ejecución en vivo')}</h1>
           <p className="text-xs text-[var(--text-secondary)] font-mono mt-1">RUN ID: {runId}</p>
         </div>
 
@@ -28,31 +30,31 @@ function LiveRunContent() {
               : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
           }`}
         >
-          ● {runStatusLabel(status)}
+          ● {t(runStatusLabel(status))}
         </span>
       </div>
 
       {status === 'waiting' && (
         <div className="rounded-[24px] bg-amber-500/10 border border-amber-500/30 p-5 text-sm">
-          <p className="font-medium">Tu ejecución está en cola{position ? ` (posición ${position})` : ''}.</p>
-          <p className="text-xs text-[var(--text-secondary)] mt-1">El entorno de pruebas se comparte y solo admite un run a la vez. Se lanzará sola cuando quede libre; puedes dejar esta página abierta.</p>
+          <p className="font-medium">{t('Tu ejecución está en cola')}{position ? ` (${t('posición {n}', { n: position })})` : ''}.</p>
+          <p className="text-xs text-[var(--text-secondary)] mt-1">{t('El entorno de pruebas se comparte y solo admite un run a la vez. Se lanzará sola cuando quede libre; puedes dejar esta página abierta.')}</p>
         </div>
       )}
 
       <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold">Stream de eventos en tiempo real</h2>
-          <span className="text-xs text-[var(--text-secondary)]">{events.length} eventos</span>
+          <h2 className="text-base font-semibold">{t('Estado de la ejecución en tiempo real')}</h2>
+          <span className="text-xs text-[var(--text-secondary)]">{t('{n} eventos', { n: events.length })}</span>
         </div>
 
         <div className="rounded-2xl bg-[#111211] text-neutral-200 p-5 font-mono text-xs sm:text-sm min-h-[340px] max-h-[500px] overflow-y-auto space-y-2.5">
           {events.length === 0 ? (
             <p className="text-neutral-500 italic">
               {status === 'finished' || status === 'failed' || status === 'timeout'
-                ? 'La ejecución ha terminado. Las herramientas publican su resultado completo al acabar, sin eventos intermedios: míralo en el informe.'
+                ? t('La ejecución ha terminado. Las herramientas publican su resultado completo al acabar, sin eventos intermedios: míralo en el informe.')
                 : status === 'waiting'
-                  ? 'Esperando turno: el entorno de pruebas solo admite una ejecución a la vez.'
-                  : 'El runner de GitHub Actions está preparando y ejecutando las pruebas. El resultado aparece aquí al terminar.'}
+                  ? t('Esperando turno: el entorno de pruebas solo admite una ejecución a la vez.')
+                  : t('El runner de GitHub Actions está preparando y ejecutando las pruebas. El resultado aparece aquí al terminar.')}
             </p>
           ) : (
             events.map((ev, idx) => (
@@ -78,7 +80,7 @@ function LiveRunContent() {
             href={`/runs/${runId}/results`}
             className="px-6 py-3 rounded-full bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] text-sm font-medium hover:opacity-90 transition"
           >
-            Ver informe y métricas →
+            {t('Ver informe y métricas')} →
           </Link>
         </div>
       )}
@@ -89,7 +91,7 @@ function LiveRunContent() {
 export default function LiveRunPage() {
   return (
     <main className="pb-12">
-      <Suspense fallback={<div className="max-w-5xl mx-auto p-8 text-sm text-[var(--text-secondary)]">Conectando con Realtime...</div>}>
+      <Suspense fallback={<div className="max-w-5xl mx-auto p-8 text-sm text-[var(--text-secondary)]">…</div>}>
         <LiveRunContent />
       </Suspense>
     </main>

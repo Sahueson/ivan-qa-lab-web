@@ -5,8 +5,10 @@ import { getAdminClient } from '@/lib/supabase/admin';
 import type { InformeData } from '@/lib/informes';
 import InformeView from '@/app/components/InformeView';
 import PrintButton from '@/app/components/PrintButton';
+import { getT } from '@/lib/i18n-server';
 
 async function InformeGuardadoPageContent({ params }: { params: Promise<{ id: string }> }) {
+  const { t } = await getT();
   const { id } = await params;
   const n = Number(id);
   if (!Number.isInteger(n)) notFound();
@@ -16,7 +18,7 @@ async function InformeGuardadoPageContent({ params }: { params: Promise<{ id: st
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-8 py-6 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
-        <Link href="/informes" className="text-sm text-[var(--text-secondary)] hover:underline">← Informes</Link>
+        <Link href="/informes" className="text-sm text-[var(--text-secondary)] hover:underline">← {t('Informes')}</Link>
         <PrintButton />
       </div>
       <InformeView data={data.data as InformeData} />

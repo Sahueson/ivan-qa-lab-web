@@ -1,3 +1,5 @@
+import { getT } from '@/lib/i18n-server';
+
 const EXPERIENCE = [
   {
     role: 'QA Automation Engineer',
@@ -83,15 +85,16 @@ const EDUCATION = [
   },
 ];
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const { t } = await getT();
   return (
     <main className="pb-16">
       <div className="max-w-6xl mx-auto px-4 sm:px-8 py-6 space-y-8">
         {/* Cabecera */}
         <div>
-          <h1 className="text-4xl font-semibold tracking-tight">About me</h1>
+          <h1 className="text-4xl font-semibold tracking-tight">{t('Sobre mí')}</h1>
           <p className="text-sm text-[var(--text-secondary)] mt-1">
-            Iván Cabanillas · QA Automation Engineer · Madrid, España
+            Iván Cabanillas · QA Automation Engineer · Madrid, {t('España')}
           </p>
         </div>
 
@@ -109,7 +112,7 @@ export default function AboutPage() {
 
             <div className="pt-4 px-1 flex items-center justify-between text-xs text-[var(--text-secondary)]">
               <span>Valdemoro, Madrid</span>
-              <span>Español · Inglés (B2)</span>
+              <span>{t('Español · Inglés (B2)')}</span>
             </div>
           </div>
 
@@ -122,15 +125,15 @@ export default function AboutPage() {
               </div>
 
               <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight leading-snug">
-                De la IA embarcada y los sistemas ADAS al backend cloud, la seguridad y el frontend.
+                {t('De la IA embarcada y los sistemas ADAS al backend cloud, la seguridad y el frontend.')}
               </h2>
 
               <p className="text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed">
-                No me quedo en reproducir un fallo: analizo el código hasta dar con la causa raíz para entregar a desarrollo un diagnóstico concreto y no solo un síntoma. He diseñado y desplegado desde cero plataformas internas de QA, automatizando suites funcionales, de carga y de seguridad bajo metodologías Agile y Scrum.
+                {t('No me quedo en reproducir un fallo: analizo el código hasta dar con la causa raíz para entregar a desarrollo un diagnóstico concreto y no solo un síntoma. He diseñado y desplegado desde cero plataformas internas de QA, automatizando suites funcionales, de carga y de seguridad bajo metodologías Agile y Scrum.')}
               </p>
 
               <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                Este laboratorio (<strong className="text-[var(--text-primary)] font-medium">Ivan QA Lab</strong>) es un entorno real conectado a GitHub Actions y Supabase donde cualquiera puede lanzar ejecuciones en vivo y auditar métricas y evidencias.
+                {t('Este laboratorio (')}<strong className="text-[var(--text-primary)] font-medium">Ivan QA Lab</strong>{t(') es un entorno real conectado a GitHub Actions y Supabase donde cualquiera puede lanzar ejecuciones en vivo y auditar métricas y evidencias.')}
               </p>
             </div>
 
@@ -147,7 +150,7 @@ export default function AboutPage() {
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                <span>Ver / Descargar CV (PDF)</span>
+                <span>{t('Ver / Descargar CV (PDF)')}</span>
               </a>
 
               <a
@@ -167,7 +170,7 @@ export default function AboutPage() {
 
         {/* Experiencia Profesional */}
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold tracking-tight">Experiencia profesional</h2>
+          <h2 className="text-xl font-semibold tracking-tight">{t('Experiencia profesional')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {EXPERIENCE.map((exp) => (
               <div
@@ -193,18 +196,18 @@ export default function AboutPage() {
                           : 'bg-[var(--bg-surface-muted)] text-[var(--text-secondary)]'
                       }`}
                     >
-                      {exp.period}
+                      {t(exp.period)}
                     </span>
                   </div>
 
                   <p className={`text-xs sm:text-sm leading-relaxed mt-3 ${exp.highlight ? 'opacity-90' : 'text-[var(--text-secondary)]'}`}>
-                    {exp.summary}
+                    {t(exp.summary)}
                   </p>
 
                   {exp.bullets.length > 0 && (
                     <ul className={`mt-3 space-y-1.5 text-xs leading-relaxed list-disc list-inside ${exp.highlight ? 'opacity-80' : 'text-[var(--text-secondary)]'}`}>
                       {exp.bullets.map((b, i) => (
-                        <li key={i}>{b}</li>
+                        <li key={i}>{t(b)}</li>
                       ))}
                     </ul>
                   )}
@@ -217,8 +220,8 @@ export default function AboutPage() {
         {/* Stack Técnico y Formación */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-7 rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6">
-            <h2 className="text-base font-semibold mb-1">Stack & Herramientas</h2>
-            <p className="text-xs text-[var(--text-secondary)] mb-5">Tecnologías habituales en automatización, cloud y CI/CD</p>
+            <h2 className="text-base font-semibold mb-1">{t('Stack & Herramientas')}</h2>
+            <p className="text-xs text-[var(--text-secondary)] mb-5">{t('Tecnologías habituales en automatización, cloud y CI/CD')}</p>
             <div className="flex flex-wrap gap-2">
               {SKILLS.map((skill) => (
                 <span
@@ -232,13 +235,13 @@ export default function AboutPage() {
           </div>
 
           <div className="lg:col-span-5 rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6">
-            <h2 className="text-base font-semibold mb-1">Formación</h2>
-            <p className="text-xs text-[var(--text-secondary)] mb-5">Trayectoria académica y especialización</p>
+            <h2 className="text-base font-semibold mb-1">{t('Formación')}</h2>
+            <p className="text-xs text-[var(--text-secondary)] mb-5">{t('Trayectoria académica y especialización')}</p>
             <div className="space-y-3">
               {EDUCATION.map((ed) => (
                 <div key={ed.title} className="p-3 rounded-2xl bg-[var(--bg-surface-muted)]">
-                  <p className="text-xs sm:text-sm font-medium">{ed.title}</p>
-                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">{ed.place}</p>
+                  <p className="text-xs sm:text-sm font-medium">{t(ed.title)}</p>
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">{t(ed.place)}</p>
                 </div>
               ))}
             </div>

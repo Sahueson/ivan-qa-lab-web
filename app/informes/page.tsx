@@ -2,8 +2,11 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { GRUPOS, type Grupo } from '@/lib/informes';
+import { getT } from '@/lib/i18n-server';
+import { dateLocale } from '@/lib/i18n';
 
 async function InformesPageContent() {
+  const { t, locale } = await getT();
   const { data: guardados } = await getAdminClient()
     .from('informes')
     .select('id, grupo, created_at')
@@ -13,28 +16,28 @@ async function InformesPageContent() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-8 py-6 space-y-8">
       <div>
-        <h1 className="text-4xl font-semibold tracking-tight">Informes</h1>
+        <h1 className="text-4xl font-semibold tracking-tight">{t('Informes')}</h1>
         <p className="text-sm text-[var(--text-secondary)] mt-1">
-          Informe ejecutivo por área, con los últimos resultados de cada herramienta. Se puede imprimir o guardar como PDF.
+          {t('Informe ejecutivo por área, con los últimos resultados de cada herramienta. Se puede imprimir o guardar como PDF.')}
         </p>
       </div>
       <div className="grid md:grid-cols-3 gap-4">
         {(Object.keys(GRUPOS) as Grupo[]).map((g) => (
           <Link key={g} href={`/informes/${g}`} className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6 hover:opacity-80 transition space-y-2">
-            <p className="text-lg font-semibold">{GRUPOS[g].titulo}</p>
+            <p className="text-lg font-semibold">{t(GRUPOS[g].titulo)}</p>
             <p className="text-xs text-[var(--text-secondary)]">{GRUPOS[g].herramientas.join(' · ')}</p>
-            <p className="text-sm text-[var(--text-secondary)]">{GRUPOS[g].descripcion}</p>
+            <p className="text-sm text-[var(--text-secondary)]">{t(GRUPOS[g].descripcion)}</p>
           </Link>
         ))}
       </div>
       <section className="space-y-3">
-        <h2 className="text-xl font-semibold">Informes guardados</h2>
+        <h2 className="text-xl font-semibold">{t('Informes guardados')}</h2>
         <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] divide-y divide-[var(--border-subtle)]">
-          {(guardados ?? []).length === 0 && <p className="p-5 text-sm text-[var(--text-secondary)]">Aún no hay informes guardados.</p>}
+          {(guardados ?? []).length === 0 && <p className="p-5 text-sm text-[var(--text-secondary)]">{t('Aún no hay informes guardados.')}</p>}
           {(guardados ?? []).map((i) => (
             <Link key={i.id} href={`/informes/guardado/${i.id}`} className="flex justify-between p-4 text-sm hover:bg-[var(--bg-surface-muted)] transition">
-              <span>{GRUPOS[i.grupo as Grupo]?.titulo ?? i.grupo}</span>
-              <span className="text-[var(--text-secondary)]">{new Date(i.created_at).toLocaleString('es-ES', { timeZone: 'Europe/Madrid' })}</span>
+              <span>{GRUPOS[i.grupo as Grupo] ? t(GRUPOS[i.grupo as Grupo].titulo) : i.grupo}</span>
+              <span className="text-[var(--text-secondary)]">{new Date(i.created_at).toLocaleString(dateLocale(locale), { timeZone: 'Europe/Madrid' })}</span>
             </Link>
           ))}
         </div>

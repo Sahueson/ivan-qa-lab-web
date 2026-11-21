@@ -1,11 +1,14 @@
 import Link from 'next/link';
 import { runStatusLabel } from '@/lib/labels';
 import { getAdminClient } from '@/lib/supabase/admin';
+import { getT } from '@/lib/i18n-server';
+import { dateLocale } from '@/lib/i18n';
 
 // Últimas ejecuciones de una o varias herramientas (en Selenium, Java y Python juntas).
 // Se guardan como mucho 4 por herramienta (pruneOldRunsForTool en /api/runs).
-export default async function RecentRuns({ toolIds, title = 'Últimas ejecuciones' }: { toolIds: string[]; title?: string }) {
+export default async function RecentRuns({ toolIds, title }: { toolIds: string[]; title?: string }) {
   if (toolIds.length === 0) return null;
+  const { t, locale } = await getT();
   const db = getAdminClient();
   const { data: suites } = await db.from('suites').select('id').in('tool_id', toolIds);
   const suiteIds = (suites ?? []).map((s) => s.id);
@@ -20,14 +23,14 @@ export default async function RecentRuns({ toolIds, title = 'Últimas ejecucione
   const runs = (data ?? []) as any[];
 
   const when = (iso: string) =>
-    new Date(iso).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' });
+    new Date(iso).toLocaleString(dateLocale(locale), { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' });
 
   return (
     <section className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6 mt-8">
-      <h2 className="text-lg font-semibold mb-1">{title}</h2>
-      <p className="text-xs text-[var(--text-secondary)] mb-5">Las más recientes de esta herramienta (se guardan las 4 últimas)</p>
+      <h2 className="text-lg font-semibold mb-1">{title ?? t('Últimas ejecuciones')}</h2>
+      <p className="text-xs text-[var(--text-secondary)] mb-5">{t('Las más recientes de esta herramienta (se guardan las 4 últimas)')}</p>
       {runs.length === 0 ? (
-        <p className="text-xs text-[var(--text-secondary)] py-6 text-center">Aún no hay ejecuciones de esta herramienta.</p>
+        <p className="text-xs text-[var(--text-secondary)] py-6 text-center">{t('Aún no hay ejecuciones de esta herramienta.')}</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {runs.map((run) => {
@@ -40,7 +43,7 @@ export default async function RecentRuns({ toolIds, title = 'Últimas ejecucione
               >
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">
-                    {run.suites?.tools?.name ?? 'Herramienta'} · {run.suites?.slug ?? 'run'}
+                    {run.suites?.tools?.name ?? t('Herramienta')} · {run.suites?.slug ?? 'run'}
                   </p>
                   <p className="text-xs text-[var(--text-secondary)] truncate">
                     {when(run.created_at)}
@@ -58,7 +61,7 @@ export default async function RecentRuns({ toolIds, title = 'Últimas ejecucione
                       : 'bg-sky-500/15 text-sky-600 dark:text-sky-400'
                   }`}
                 >
-                  {runStatusLabel(run.status)}
+                  {t(runStatusLabel(run.status))}
                 </span>
               </Link>
             );

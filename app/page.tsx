@@ -1,9 +1,11 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { getAdminClient } from '@/lib/supabase/admin';
+import { getT } from '@/lib/i18n-server';
+import { dateLocale, type Locale } from '@/lib/i18n';
 
 // Mini gráfico de la tarjeta negra: tasa de éxito acumulada, del run más antiguo al más reciente.
-function Sparkline({ statuses }: { statuses: string[] }) {
+function Sparkline({ statuses, label }: { statuses: string[]; label: string }) {
   if (statuses.length < 2) return null;
 
   const rates = statuses.map(
@@ -27,7 +29,7 @@ function Sparkline({ statuses }: { statuses: string[] }) {
       viewBox={`0 0 ${W} ${H}`}
       className="w-28 h-10 shrink-0"
       role="img"
-      aria-label="Evolución de la tasa de éxito en los últimos runs"
+      aria-label={label}
     >
       <path d={area} fill="currentColor" opacity="0.12" />
       <path d={line} fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" strokeLinecap="round" />
@@ -63,8 +65,8 @@ const runDot = (run: RunRow) => {
 
 const runHref = (run: RunRow) => (run.status === 'finished' ? `/runs/${run.id}/results` : `/runs/${run.id}`);
 
-const runWhen = (iso: string) =>
-  new Date(iso).toLocaleString('es-ES', {
+const runWhen = (iso: string, locale: Locale) =>
+  new Date(iso).toLocaleString(dateLocale(locale), {
     day: '2-digit',
     month: 'short',
     hour: '2-digit',
@@ -72,7 +74,9 @@ const runWhen = (iso: string) =>
     timeZone: 'Europe/Madrid',
   });
 
-function LastRunPanel({ runs }: { runs: RunRow[] }) {
+type T = (es: string, vars?: Record<string, string | number>) => string;
+
+function LastRunPanel({ runs, t, locale }: { runs: RunRow[]; t: T; locale: Locale }) {
   const [last, ...previous] = runs;
   const lastSummary = last ? runSummary(last) : null;
 
@@ -80,20 +84,20 @@ function LastRunPanel({ runs }: { runs: RunRow[] }) {
     <div className="rounded-[24px] bg-[var(--bg-hero)] text-[var(--text-hero)] border border-[var(--border-subtle)] p-6 flex flex-col gap-5">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Último run</h2>
-          <p className="text-xs opacity-60">Lo más reciente en el pipeline</p>
+          <h2 className="text-lg font-semibold">{t('Último run')}</h2>
+          <p className="text-xs opacity-60">{t('Lo más reciente en el pipeline')}</p>
         </div>
         {last && <span className={`w-2.5 h-2.5 rounded-full ${runDot(last)}`} aria-hidden />}
       </div>
 
       {!last ? (
-        <p className="text-xs opacity-60 py-8 text-center">Aún no hay ejecuciones registradas.</p>
+        <p className="text-xs opacity-60 py-8 text-center">{t('Aún no hay ejecuciones registradas.')}</p>
       ) : (
         <>
           <div className="rounded-2xl bg-white/5 border border-white/10 p-4 space-y-3">
-            <p className="text-xs opacity-60">{runLabel(last)} · {runWhen(last.created_at)}</p>
+            <p className="text-xs opacity-60">{t(runLabel(last))} · {runWhen(last.created_at, locale)}</p>
             <p className="text-xl font-semibold tracking-tight leading-tight">
-              {last.suites?.tools?.name || 'Suite'} · {last.suites?.slug || 'run'}
+              {last.suites?.tools?.name || t('Suite')} · {last.suites?.slug || 'run'}
             </p>
             {lastSummary && (
               <p className="text-xs opacity-70">
@@ -106,23 +110,23 @@ function LastRunPanel({ runs }: { runs: RunRow[] }) {
                 href={runHref(last)}
                 className="px-4 py-1.5 rounded-full bg-white text-[#141413] text-xs font-semibold hover:opacity-90 transition"
               >
-                {last.status === 'finished' || last.status === 'failed' ? 'Ver resultados' : 'Ver en vivo'}
+                {last.status === 'finished' || last.status === 'failed' ? t('Ver resultados') : t('Ver en vivo')}
               </Link>
             </div>
           </div>
 
           {previous.length > 0 && (
             <div>
-              <p className="text-xs opacity-60 mb-2">Anteriores</p>
+              <p className="text-xs opacity-60 mb-2">{t('Anteriores')}</p>
               <div className="divide-y divide-white/10">
                 {previous.slice(0, 4).map((run) => (
                   <Link key={run.id} href={runHref(run)} className="flex items-center gap-3 py-2.5 hover:opacity-80 transition">
                     <span className={`w-2 h-2 rounded-full shrink-0 ${runDot(run)}`} aria-hidden />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm truncate">
-                        {run.suites?.tools?.name || 'Suite'} · {run.suites?.slug || 'run'}
+                        {run.suites?.tools?.name || t('Suite')} · {run.suites?.slug || 'run'}
                       </p>
-                      <p className="text-xs opacity-50">{runLabel(run)} · {runWhen(run.created_at)}</p>
+                      <p className="text-xs opacity-50">{t(runLabel(run))} · {runWhen(run.created_at, locale)}</p>
                     </div>
                     <span className="opacity-40" aria-hidden>›</span>
                   </Link>
@@ -137,6 +141,7 @@ function LastRunPanel({ runs }: { runs: RunRow[] }) {
 }
 
 async function StudioDashboard() {
+  const { t, locale } = await getT();
   const db = getAdminClient();
 
   const [toolsRes, runsRes, suitesRes, activeRes, waitingRes] = await Promise.all([
@@ -183,14 +188,14 @@ async function StudioDashboard() {
         <div>
           <h1 className="text-4xl font-semibold tracking-tight">Studio</h1>
           <p className="text-sm text-[var(--text-secondary)] mt-1">
-            Entorno de pruebas: staging de Tactical Calendar · {tools.length} herramientas
+            {t('Entorno de pruebas: staging de Tactical Calendar · {n} herramientas', { n: tools.length })}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <span className="px-3.5 py-1.5 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs font-medium flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full ${activeCount > 0 ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
-            {activeCount > 0 ? 'Ejecutando una prueba' : 'Libre para lanzar'}
-            {waitingCount > 0 ? ` · ${waitingCount} en cola` : ''}
+            {activeCount > 0 ? t('Ejecutando una prueba') : t('Libre para lanzar')}
+            {waitingCount > 0 ? ` · ${t('{n} en cola', { n: waitingCount })}` : ''}
           </span>
         </div>
       </div>
@@ -199,34 +204,34 @@ async function StudioDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="col-span-2 lg:col-span-1 rounded-[24px] bg-[var(--bg-hero)] text-[var(--text-hero)] border border-[var(--border-subtle)] p-5 sm:p-6 flex flex-col justify-between min-h-[130px] sm:min-h-[156px]">
           <div className="flex items-center justify-between text-xs opacity-70">
-            <span>Estabilidad reciente</span>
-            <span>Últimos runs</span>
+            <span>{t('Estabilidad reciente')}</span>
+            <span>{t('Últimos runs')}</span>
           </div>
           <div className="my-2 flex items-end justify-between gap-3">
             <span className="text-3xl font-semibold tracking-tight">{passRate}%</span>
-            <Sparkline statuses={[...realRuns].reverse().map((r) => (r.status === 'finished' && failedOf(r) > 0 ? 'with_failures' : r.status))} />
+            <Sparkline label={t('Evolución de la tasa de éxito en los últimos runs')} statuses={[...realRuns].reverse().map((r) => (r.status === 'finished' && failedOf(r) > 0 ? 'with_failures' : r.status))} />
           </div>
           <div className="flex items-center gap-2 text-xs">
-            <span className={`px-2 py-0.5 rounded-full font-medium ${lastHealth.cls}`}>{lastHealth.text}</span>
+            <span className={`px-2 py-0.5 rounded-full font-medium ${lastHealth.cls}`}>{t(lastHealth.text)}</span>
           </div>
         </div>
 
         <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-4 sm:p-6 flex flex-col justify-between min-h-[120px] sm:min-h-[156px]">
-          <span className="text-xs text-[var(--text-secondary)]">Ejecuciones recientes</span>
+          <span className="text-xs text-[var(--text-secondary)]">{t('Ejecuciones recientes')}</span>
           <span className="text-3xl font-semibold tracking-tight">{realRuns.length}</span>
-          <span className="text-xs text-[var(--text-secondary)]">{passedRuns.length} superadas sin fallos</span>
+          <span className="text-xs text-[var(--text-secondary)]">{t('{n} superadas sin fallos', { n: passedRuns.length })}</span>
         </div>
 
         <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-4 sm:p-6 flex flex-col justify-between min-h-[120px] sm:min-h-[156px]">
-          <span className="text-xs text-[var(--text-secondary)]">Suites disponibles</span>
+          <span className="text-xs text-[var(--text-secondary)]">{t('Suites disponibles')}</span>
           <span className="text-3xl font-semibold tracking-tight">{suiteCount}</span>
-          <span className="text-xs text-[var(--text-secondary)]">Suites reales (A–I) por herramienta</span>
+          <span className="text-xs text-[var(--text-secondary)]">{t('Suites reales (A–I) por herramienta')}</span>
         </div>
 
         <div className="col-span-2 lg:col-span-1 rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-4 sm:p-6 flex flex-col justify-between min-h-[120px] sm:min-h-[156px]">
-          <span className="text-xs text-[var(--text-secondary)]">Tiempo medio arranque</span>
+          <span className="text-xs text-[var(--text-secondary)]">{t('Tiempo medio arranque')}</span>
           <span className="text-3xl font-semibold tracking-tight">~39s</span>
-          <span className="text-xs text-[var(--text-secondary)]">Medido en GitHub Actions</span>
+          <span className="text-xs text-[var(--text-secondary)]">{t('Medido en GitHub Actions')}</span>
         </div>
       </div>
 
@@ -236,8 +241,8 @@ async function StudioDashboard() {
         <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-lg font-semibold">Motores de Automatización</h2>
-              <p className="text-xs text-[var(--text-secondary)]">Selecciona un framework para configurar y lanzar pruebas</p>
+              <h2 className="text-lg font-semibold">{t('Motores de Automatización')}</h2>
+              <p className="text-xs text-[var(--text-secondary)]">{t('Selecciona un framework para configurar y lanzar pruebas')}</p>
             </div>
           </div>
 
@@ -254,11 +259,11 @@ async function StudioDashboard() {
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-base capitalize">{tool.name || tool.slug}</span>
                   <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
-                    {tool.enabled !== false ? 'Activo' : 'Inactivo'}
+                    {tool.enabled !== false ? t('Activo') : t('Inactivo')}
                   </span>
                 </div>
                 <div className="hidden sm:flex items-center justify-between text-xs text-[var(--text-secondary)]">
-                  <span>Elegir suite y lanzar</span>
+                  <span>{t('Elegir suite y lanzar')}</span>
                   <span className="group-hover:translate-x-1 transition-transform">→</span>
                 </div>
               </Link>
@@ -269,7 +274,7 @@ async function StudioDashboard() {
         </div>
 
         {/* Panel negro estilo "Next up": último run destacado + anteriores */}
-        <LastRunPanel runs={recentRuns as unknown as RunRow[]} />
+        <LastRunPanel runs={recentRuns as unknown as RunRow[]} t={t} locale={locale} />
       </div>
 
     </div>
@@ -279,7 +284,7 @@ async function StudioDashboard() {
 export default function HomePage() {
   return (
     <main className="pb-12">
-      <Suspense fallback={<div className="max-w-7xl mx-auto p-8 text-sm text-[var(--text-secondary)]">Cargando Studio...</div>}>
+      <Suspense fallback={<div className="max-w-7xl mx-auto p-8 text-sm text-[var(--text-secondary)]">…</div>}>
         <StudioDashboard />
       </Suspense>
     </main>

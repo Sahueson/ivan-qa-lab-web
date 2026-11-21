@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { getAdminClient } from '@/lib/supabase/admin';
 import RunSelector, { DiscoveredTest, SuiteItem } from '@/app/components/RunSelector';
 import RecentRuns from '@/app/components/RecentRuns';
+import { getT } from '@/lib/i18n-server';
 import { compareCaseNames } from '@/lib/case-order';
 
 function normalizeRepo(repo: string): string {
@@ -245,6 +246,7 @@ async function discoverTestsFromGitHub(
 }
 
 async function ToolContent({ params }: { params: Promise<{ tool: string }> }) {
+  const { t: tr } = await getT();
   const { tool } = await params;
   const db = getAdminClient();
 
@@ -315,7 +317,7 @@ async function ToolContent({ params }: { params: Promise<{ tool: string }> }) {
           {isSelenium ? 'Selenium' : tool.replace('-', ' ')}
         </h1>
         <p className="text-sm text-[var(--text-secondary)] mt-1">
-          Elige una suite completa o filtra escenarios individuales para lanzar en el runner
+          {tr('Elige una suite completa o filtra escenarios individuales para lanzar en el runner')}
         </p>
       </div>
 
@@ -325,7 +327,7 @@ async function ToolContent({ params }: { params: Promise<{ tool: string }> }) {
         suitesByTool={suitesByTool}
         testsByTool={testsByTool}
         recentRunsByTool={Object.fromEntries(
-          relevantTools.map((t) => [t.slug, <RecentRuns key={t.slug} toolIds={[t.id]} title={`Últimas ejecuciones · ${t.name}`} />])
+          relevantTools.map((t) => [t.slug, <RecentRuns key={t.slug} toolIds={[t.id]} title={`${tr('Últimas ejecuciones')} · ${t.name}`} />])
         )}
       />
     </div>
@@ -335,7 +337,7 @@ async function ToolContent({ params }: { params: Promise<{ tool: string }> }) {
 export default function ToolPage({ params }: { params: Promise<{ tool: string }> }) {
   return (
     <main className="pb-12">
-      <Suspense fallback={<div className="max-w-5xl mx-auto p-8 text-sm text-[var(--text-secondary)]">Cargando suites y casos de prueba...</div>}>
+      <Suspense fallback={<div className="max-w-5xl mx-auto p-8 text-sm text-[var(--text-secondary)]">…</div>}>
         <ToolContent params={params} />
       </Suspense>
     </main>

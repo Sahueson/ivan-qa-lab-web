@@ -381,6 +381,12 @@ La web ya copia: cabecera con navegación en píldora, modo noche, botón negro 
   métricas, botón Crear partida...). Newman/Bruno/Karate: 3 casos (spec.js); JMeter: PERF-17..19 con umbral irreal. Los run.sh de
   API/perf NO la incluyen en el valor por defecto (ALL = A-I); la web siempre pasa SUITE. Verificado en CI: 0 pasan, 7 o 3 fallan.
   Gotcha: `git add -A` en Windows pierde el bit de ejecución de run.sh -> `git update-index --chmod=+x run.sh` (Permission denied en CI).
+- IDIOMA ES/EN (21-nov): botón ES/EN en la cabecera, como el de modo noche. El idioma lo decide el SERVIDOR (cookie qa-lang; si no hay, Accept-Language: inglés si empieza
+  por en, si no español) y llega a los componentes de cliente por I18nProvider, así el HTML sale ya traducido y no hay desfase de hidratación (no repetir el
+  error #418). El texto está escrito en español y la CLAVE es el propio español: t("texto", {n}) en lib/i18n.ts; las traducciones están en lib/i18n-en.ts (si
+  falta una, se enseña el español). Servidor: `const { t, locale } = await getT()` (lib/i18n-server.ts); cliente: useT()/useI18n(). Fechas: dateLocale(locale).
+  Quedan en español por venir de la base de datos o de los repos: nombres de tests, contenido de los bugs, los informes HTML de GitHub Pages y el CV (PDF).
+  Al añadir texto nuevo: escribirlo en español con t() y añadir su par en i18n-en.ts.
 - MAPA DE SUITES ELIMINADO (21-nov, decisión de Iván): con 4 runs por herramienta casi siempre estaba vacío. La letra de la suite va en su nombre
   (RunSelector.suiteLabel: "A · Autenticación y perfiles"). "Seleccionar todas las suites" excluye la J (Demo de fallos).
 - Los 6 secretos de cada repo los pone poner-secretos.sh (raíz de ivan-qa-lab, local) desde .qa-lab.env. Gotchas: run.sh sin bit de

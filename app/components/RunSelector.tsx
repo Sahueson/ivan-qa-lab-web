@@ -1,6 +1,7 @@
 'use client';
 import { useState, useMemo, useEffect, useRef, type ReactNode } from 'react';
 import Toast from './Toast';
+import { useT, useI18n } from './I18nProvider';
 
 const TIEMPO_FIJO = 39;
 const TIEMPO_PREP = 21;
@@ -8,13 +9,6 @@ const SUT_DEV_URL =
   process.env.NEXT_PUBLIC_SUT_DEV_URL || 'https://tactical-calendar-demo-git-dev-sahueson.vercel.app/';
 
 const CONTACT_EMAIL = 'ivancabanillas93@gmail.com';
-const SUBJECT_ENCODED = encodeURIComponent('Solicitud de acceso - Tactical Calendar (QA Lab)');
-const BODY_ENCODED = encodeURIComponent(
-  'Hola Iván,\n\nHe estado probando Ivan QA Lab y me gustaría solicitar un usuario de prueba para explorar Tactical Calendar en el entorno dev.\n\nUn saludo.'
-);
-
-const GMAIL_COMPOSE_URL = `https://mail.google.com/mail/?view=cm&fs=1&to=${CONTACT_EMAIL}&su=${SUBJECT_ENCODED}&body=${BODY_ENCODED}`;
-const ACCESS_MAILTO = `mailto:${CONTACT_EMAIL}?subject=${SUBJECT_ENCODED}&body=${BODY_ENCODED}`;
 
 export type Variant = {
   id: string;
@@ -54,8 +48,14 @@ export default function RunSelector({
   recentRunsByTool?: Record<string, ReactNode>;
 }) {
   const [activeToolSlug, setActiveToolSlug] = useState(initialToolSlug);
+  const t = useT();
+  const { locale } = useI18n();
+  const subjectEncoded = encodeURIComponent(t('Solicitud de acceso - Tactical Calendar (QA Lab)'));
+  const bodyEncoded = encodeURIComponent(t('Hola Iván,\n\nHe estado probando Ivan QA Lab y me gustaría solicitar un usuario de prueba para explorar Tactical Calendar en el entorno dev.\n\nUn saludo.'));
+  const GMAIL_COMPOSE_URL = `https://mail.google.com/mail/?view=cm&fs=1&to=${CONTACT_EMAIL}&su=${subjectEncoded}&body=${bodyEncoded}`;
+  const ACCESS_MAILTO = `mailto:${CONTACT_EMAIL}?subject=${subjectEncoded}&body=${bodyEncoded}`;
   const suites = suitesByTool[activeToolSlug] || [];
-  const suiteLabel = (slug: string, name?: string) => slug === 'all' ? 'Todas las suites' : `${slug.charAt(0).toUpperCase()} · ${name ?? slug}`;
+  const suiteLabel = (slug: string, name?: string) => slug === 'all' ? t('Todas las suites') : `${slug.charAt(0).toUpperCase()} · ${t(name ?? slug)}`;
   const allTests = testsByTool[activeToolSlug] || [];
   // "Seleccionar todas" no incluye la Demo de fallos (falla a propósito): solo se lanza eligiéndola a mano.
   // si todos los tests viven en el mismo fichero (colección de Newman, plan de JMeter) la ruta no aporta nada
@@ -189,10 +189,10 @@ export default function RunSelector({
         window.location.href = `/runs/${run_id}`;
       } else {
         const { error } = await res.json();
-        setErrorMsg(error);
+        setErrorMsg(t(error));
       }
     } catch {
-      setErrorMsg('Error de conexión al lanzar los tests.');
+      setErrorMsg(t('Error de conexión al lanzar los tests.'));
     } finally {
       setIsLaunching(false);
     }
@@ -209,12 +209,12 @@ export default function RunSelector({
         <div className="space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[var(--bg-surface-muted)] border border-[var(--border-subtle)] text-[var(--text-secondary)]">
-              Sistema bajo prueba (SUT)
+              {t('Sistema bajo prueba (SUT)')}
             </span>
             <span className="text-sm font-semibold text-[var(--text-primary)]">Tactical Calendar</span>
           </div>
           <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed max-w-2xl">
-            Aplicación de gestión de partidas, inscripciones, roles (MAD / FOE) y gobernanza. Los tests automatizados corren sobre <strong className="font-medium text-[var(--text-primary)]">staging</strong>; si quieres explorar la app manualmente en <strong className="font-medium text-[var(--text-primary)]">dev</strong>, solicítame un usuario base y te lo facilito al momento.
+            {t('Aplicación de gestión de partidas, inscripciones, roles (MAD / FOE) y gobernanza. Los tests automatizados corren sobre')} <strong className="font-medium text-[var(--text-primary)]">staging</strong>{t('; si quieres explorar la app manualmente en')} <strong className="font-medium text-[var(--text-primary)]">dev</strong>{t(', solicítame un usuario base y te lo facilito al momento.')}
           </p>
         </div>
 
@@ -225,7 +225,7 @@ export default function RunSelector({
               onClick={() => setAccessMenuOpen((prev) => !prev)}
               className="px-4 py-2.5 rounded-full bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] text-xs font-medium hover:opacity-90 transition inline-flex items-center gap-1.5 cursor-pointer"
             >
-              <span>Solicitar usuario</span>
+              <span>{t('Solicitar usuario')}</span>
               <svg
                 className={`w-3.5 h-3.5 transition-transform ${accessMenuOpen ? 'rotate-180' : ''}`}
                 viewBox="0 0 24 24"
@@ -247,8 +247,8 @@ export default function RunSelector({
                   className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-[var(--bg-surface-muted)] transition"
                 >
                   <div>
-                    <p className="text-xs font-semibold">Abrir en Gmail</p>
-                    <p className="text-[11px] text-[var(--text-secondary)]">Redacción web directa</p>
+                    <p className="text-xs font-semibold">{t('Abrir en Gmail')}</p>
+                    <p className="text-[11px] text-[var(--text-secondary)]">{t('Redacción web directa')}</p>
                   </div>
                   <span className="text-xs text-[var(--text-secondary)]">↗</span>
                 </a>
@@ -260,7 +260,7 @@ export default function RunSelector({
                 >
                   <div>
                     <p className="text-xs font-semibold">
-                      {copiedEmail ? '¡Correo copiado!' : 'Copiar dirección'}
+                      {copiedEmail ? t('¡Correo copiado!') : t('Copiar dirección')}
                     </p>
                     <p className="text-[11px] text-[var(--text-secondary)] font-mono">
                       {CONTACT_EMAIL}
@@ -277,8 +277,8 @@ export default function RunSelector({
                   className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-[var(--bg-surface-muted)] transition"
                 >
                   <div>
-                    <p className="text-xs font-semibold">App por defecto</p>
-                    <p className="text-[11px] text-[var(--text-secondary)]">Cliente local (mailto)</p>
+                    <p className="text-xs font-semibold">{t('App por defecto')}</p>
+                    <p className="text-[11px] text-[var(--text-secondary)]">{t('Cliente local (mailto)')}</p>
                   </div>
                   <span className="text-xs text-[var(--text-secondary)]">→</span>
                 </a>
@@ -292,7 +292,7 @@ export default function RunSelector({
             rel="noopener noreferrer"
             className="px-4 py-2.5 rounded-full bg-[var(--bg-surface-muted)] border border-[var(--border-subtle)] text-xs font-medium hover:border-[var(--text-primary)] transition inline-flex items-center gap-1.5"
           >
-            <span>Abrir entorno dev</span>
+            <span>{t('Abrir entorno dev')}</span>
             <span>↗</span>
           </a>
         </div>
@@ -303,7 +303,7 @@ export default function RunSelector({
         {variants && variants.length > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-3 pb-6 border-b border-[var(--border-subtle)]">
             <div>
-              <p className="text-sm font-medium">Implementación / Lenguaje</p>
+              <p className="text-sm font-medium">{t('Implementación / Lenguaje')}</p>
               <p className="text-xs text-[var(--text-secondary)] font-mono mt-0.5">
                 Target: {activeToolSlug}
               </p>
@@ -337,10 +337,10 @@ export default function RunSelector({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-                  Suites / Módulos ({suites.length} disponibles)
+                  {t('Suites / Módulos ({n} disponibles)', { n: suites.length })}
                 </label>
                 <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                  Puedes navegar entre suites y acumular tests de varias antes de lanzar
+                  {t('Puedes navegar entre suites y acumular tests de varias antes de lanzar')}
                 </p>
               </div>
 
@@ -355,8 +355,8 @@ export default function RunSelector({
                   }`}
                 >
                   {allGlobalSelected
-                    ? `Desmarcar todas (${selectableTests.length} tests)`
-                    : `Seleccionar todas las suites (${selectableTests.length} tests)`}
+                    ? t('Desmarcar todas ({n} tests)', { n: selectableTests.length })
+                    : t('Seleccionar todas las suites ({n} tests)', { n: selectableTests.length })}
                 </button>
               )}
             </div>
@@ -408,13 +408,14 @@ export default function RunSelector({
             <div>
               <h2 className="text-lg font-semibold">
                 {searchQuery.trim()
-                  ? `Resultados de búsqueda (${visibleTests.length})`
-                  : `Escenarios en ${suiteLabel(activeSuiteSlug, suites.find((x) => x.slug === activeSuiteSlug)?.name)} (${visibleTests.length})`}
+                  ? t('Resultados de búsqueda ({n})', { n: visibleTests.length })
+                  : t('Escenarios en {suite} ({n})', { suite: suiteLabel(activeSuiteSlug, suites.find((x) => x.slug === activeSuiteSlug)?.name), n: visibleTests.length })}
               </h2>
               <p className="text-xs text-[var(--text-secondary)]">
                 {selectedSuites.length > 1
-                  ? `${selectedTestIds.length} tests marcados en ${selectedSuites.length} suites distintas`
-                  : 'Marca los escenarios que quieras incluir en esta ejecución'}
+                  ? t('{n} tests marcados en {m} suites distintas', { n: selectedTestIds.length, m: selectedSuites.length })
+                  : t('Marca los escenarios que quieras incluir en esta ejecución')}
+                {locale === 'en' ? ` ${t('(test names are in Spanish, like the app under test)')}` : ''}
               </p>
             </div>
 
@@ -425,7 +426,7 @@ export default function RunSelector({
                   onClick={toggleVisibleSuite}
                   className="px-3.5 py-1.5 rounded-full bg-[var(--bg-surface-muted)] border border-[var(--border-subtle)] text-xs font-medium hover:opacity-80 transition cursor-pointer"
                 >
-                  {allCurrentSuiteSelected ? 'Desmarcar esta suite' : 'Marcar esta suite'}
+                  {allCurrentSuiteSelected ? t('Desmarcar esta suite') : t('Marcar esta suite')}
                 </button>
               )}
               {selectedTestIds.length > 0 && (
@@ -445,16 +446,16 @@ export default function RunSelector({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por código (ej. TC-B, SMOKE) o título (distingue mayúsculas)..."
+              placeholder={t('Buscar por código (ej. TC-B, SMOKE) o título (distingue mayúsculas)...')}
               className="w-full px-4 py-2.5 rounded-2xl bg-[var(--bg-surface-muted)] border border-[var(--border-subtle)] text-sm focus:outline-none focus:border-[var(--text-primary)]"
             />
           )}
 
           {visibleTests.length === 0 ? (
             <div className="p-6 rounded-2xl bg-[var(--bg-surface-muted)] border border-[var(--border-subtle)] text-center space-y-1">
-              <p className="text-sm font-medium">No se encontraron escenarios en esta vista</p>
+              <p className="text-sm font-medium">{t('No se encontraron escenarios en esta vista')}</p>
               <p className="text-xs text-[var(--text-secondary)]">
-                Prueba otra suite o limpia el filtro de búsqueda.
+                {t('Prueba otra suite o limpia el filtro de búsqueda.')}
               </p>
             </div>
           ) : (
@@ -498,7 +499,7 @@ export default function RunSelector({
         {/* Pie de lanzamiento */}
         <div className="pt-6 border-t border-[var(--border-subtle)] flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
-            <p className="text-xs text-[var(--text-secondary)]">Duración estimada en runner</p>
+            <p className="text-xs text-[var(--text-secondary)]">{t('Duración estimada en runner')}</p>
             <p className="text-2xl font-semibold tracking-tight">~{Math.round(estimatedTime)}s</p>
           </div>
 
@@ -510,12 +511,12 @@ export default function RunSelector({
               className="w-full sm:w-auto px-6 py-3 rounded-full bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] text-sm font-medium disabled:opacity-40 hover:opacity-90 transition cursor-pointer"
             >
               {isLaunching
-                ? 'Despachando workflow...'
+                ? t('Despachando workflow...')
                 : selectedTestIds.length === 0
-                ? 'Selecciona al menos 1 test'
+                ? t('Selecciona al menos 1 test')
                 : selectedSuites.length > 1
-                ? `Lanzar ${selectedTestIds.length} tests (${selectedSuites.length} suites)`
-                : `Lanzar ${selectedTestIds.length} ${selectedTestIds.length === 1 ? 'test' : 'tests'}`}
+                ? t('Lanzar {n} tests ({m} suites)', { n: selectedTestIds.length, m: selectedSuites.length })
+                : selectedTestIds.length === 1 ? t('Lanzar 1 test') : t('Lanzar {n} tests', { n: selectedTestIds.length })}
             </button>
           </div>
         </div>

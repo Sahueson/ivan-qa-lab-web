@@ -1,4 +1,6 @@
 'use client';
+
+import { useT } from './I18nProvider';
 import { useEffect } from 'react';
 
 type Props = {
@@ -11,6 +13,7 @@ type Props = {
 
 // Aviso flotante abajo en el centro: píldora negra, como el toast del diseño de referencia (Talmo).
 export default function Toast({ message, onClose, duration = 6000, tone = 'info' }: Props) {
+  const t = useT();
   useEffect(() => {
     if (!message) return;
     const id = setTimeout(onClose, duration);
@@ -32,7 +35,7 @@ export default function Toast({ message, onClose, duration = 6000, tone = 'info'
         <span className="leading-snug">{message}</span>
         <button
           onClick={onClose}
-          aria-label="Cerrar aviso"
+          aria-label={t('Cerrar aviso')}
           className="ml-1 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-xs font-medium transition cursor-pointer"
         >
           Cerrar
