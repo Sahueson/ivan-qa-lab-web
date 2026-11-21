@@ -8,10 +8,12 @@ async function ResultsContent({ params }: { params: Promise<{ id: string }> }) {
   const { id: runId } = await params;
   const db = getAdminClient();
 
-  const [summaryRes, testsRes] = await Promise.all([
+  const [summaryRes, testsRes, runRes] = await Promise.all([
     db.from('run_summary').select('*').eq('run_id', runId).single(),
     db.from('test_results').select('*').eq('run_id', runId).order('name', { ascending: true }),
+    db.from('runs').select('suites(slug, tools(slug))').eq('id', runId).single(),
   ]);
+  const runInfo = runRes.data as unknown as { suites?: { slug: string; tools?: { slug: string } } } | null;
 
   const summary = summaryRes.data;
   // Mismo orden que el selector: TC-SMOKE, TC-A01, TC-A01b, TC-A02...
@@ -165,6 +167,14 @@ async function ResultsContent({ params }: { params: Promise<{ id: string }> }) {
                     </a>
                   ) : (
                     <span className="text-[var(--text-secondary)] text-xs">-</span>
+                  )}
+                  {test.status === 'failed' && (
+                    <Link
+                      href={`/bugs/nuevo?${new URLSearchParams({ run: runId, tool: runInfo?.suites?.tools?.slug ?? '', suite: runInfo?.suites?.slug ?? '', test: test.name, evidence: test.evidence_url ?? '' })}`}
+                      className="ml-2 px-3 py-1 rounded-full border border-[var(--border-subtle)] text-xs font-medium hover:opacity-80 transition inline-block"
+                    >
+                      Crear bug
+                    </Link>
                   )}
                 </td>
               </tr>

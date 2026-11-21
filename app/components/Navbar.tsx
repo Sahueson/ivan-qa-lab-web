@@ -87,7 +87,7 @@ export default function Navbar({ tools }: { tools: NavTool[] }) {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-[var(--bg-canvas)]/85">
+    <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-[var(--bg-canvas)]/85 print:hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-8 h-20 flex items-center justify-between gap-4">
         {/* Marca izquierda limpia */}
         <Link href="/" className="flex items-center gap-3 shrink-0">
@@ -138,6 +138,18 @@ export default function Navbar({ tools }: { tools: NavTool[] }) {
           })}
 
           <Link
+            href="/informes"
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${pathname.startsWith('/informes') ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+          >
+            Informes
+          </Link>
+          <Link
+            href="/bugs"
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${pathname.startsWith('/bugs') ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+          >
+            Bugs
+          </Link>
+          <Link
             href="/about"
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${pathname.startsWith('/about') ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
           >
@@ -147,6 +159,8 @@ export default function Navbar({ tools }: { tools: NavTool[] }) {
 
         {/* Controles derecha: Acceso rápido móvil + Modo Día/Noche + Nuevo Run */}
         <div className="flex items-center gap-2.5">
+          <Link href="/informes" className="md:hidden px-3.5 py-2 rounded-full border text-xs font-medium bg-[var(--bg-surface)] border-[var(--border-subtle)]">Informes</Link>
+          <Link href="/bugs" className="md:hidden px-3.5 py-2 rounded-full border text-xs font-medium bg-[var(--bg-surface)] border-[var(--border-subtle)]">Bugs</Link>
           <Link
             href="/about"
             className={`md:hidden px-3.5 py-2 rounded-full border text-xs font-medium transition ${

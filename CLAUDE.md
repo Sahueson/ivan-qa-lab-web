@@ -341,7 +341,7 @@ La web ya copia: cabecera con navegación en píldora, modo noche, botón negro 
 - Repos qa-newman, qa-bruno, qa-karate (categoría `api`) y qa-jmeter (`performance`), en GitHub bajo Sahueson. Cada uno tiene las
   MISMAS 9 suites que Playwright (a-auth ... i-normas, mismos nombres), así que en el Mapa de suites cada herramienta ocupa A-I
   (antes una suite "api" caía en la columna A, porque letterOf() usa la primera letra del slug).
-- 57 casos de API (TC-API01..58) iguales en Newman, Bruno y Karate: RLS anónimo, apikey/login, visibilidad por rol y escrituras
+- 57 casos de API (TC-A01..TC-I06, numerados por suite como Playwright) iguales en Newman, Bruno y Karate: RLS anónimo, apikey/login, visibilidad por rol y escrituras
   que deben quedar bloqueadas (PATCH/DELETE con filtro y Prefer: return=representation: pasa si 401/403 o 0 filas afectadas).
   JMeter: 16 casos (PERF-01..16, 5 usuarios x 10 iteraciones, p95 contra umbral de cases.json), repartidos en las 9 suites.
 - Fuente única: ivan-qa-lab-shared/api-cases (spec.js + gen-all.js + gen-jmeter.js). Se edita spec.js y se regeneran los 4 repos.
@@ -351,8 +351,14 @@ La web ya copia: cabecera con navegación en píldora, modo noche, botón negro 
   features/sessions.feature; JMeter: setUp thread group): Supabase Auth da 429 pasadas 30 peticiones de token en 5 min por IP.
 - Alta en la base: supabase/alta-api-performance.sql (incluye la migración 20261120020000: categoría `performance`).
   Lector de tests de la web: .feature (Karate, como Cucumber), .bru, colección Postman y cases.json de JMeter (app/[tool]/page.tsx).
-- La API (app/api/runs/route.ts) guarda ya las últimas 2 runs de CADA SUITE (antes 4 por herramienta, y el Mapa solo podía
-  llenar 4 celdas por fila). SuiteGrid lee las últimas 500 runs.
+- La API (app/api/runs/route.ts) guarda las últimas 4 runs de cada herramienta (una run = un lanzamiento, aunque mezcle suites).
+  El Mapa de suites solo muestra las suites de esas runs.
+- EVIDENCIAS de API/carga: cada test sube un JSON (petición y respuesta; en JMeter, mediciones) al bucket evidence vía
+  shared/publish-results.js (`evidence_data`), sin cabeceras de clave, tokens, contraseñas, emails ni UUID. La web lo enlaza como
+  "Ver petición y respuesta".
+- MINI JIRA E INFORMES (21-nov): /bugs (bugs + comentarios, tablas bugs/bug_comments) e /informes (back/front/rendimiento,
+  tabla informes con versiones guardadas). Lectura pública; escribir exige QA_ADMIN_KEY (variable de Vercel) en acciones de servidor
+  (app/bugs/actions.ts). Migración supabase/migrations/20261121000000_bugs_informes.sql (idempotente, con un bug de ejemplo).
 - Los 6 secretos de cada repo los pone poner-secretos.sh (raíz de ivan-qa-lab, local) desde .qa-lab.env. Gotchas: run.sh sin bit de
   ejecución en Windows -> el workflow usa `bash ./run.sh`; jmeter.bat falla con rutas con espacios en Windows (run.sh lanza el JAR);
   Karate 2.x (CLI) y 1.x (JAR) generan informes en directorios distintos (el conversor busca los json de forma recursiva).
