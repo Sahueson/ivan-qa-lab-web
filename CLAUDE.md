@@ -351,7 +351,10 @@ La web ya copia: cabecera con navegación en píldora, modo noche, botón negro 
   features/sessions.feature; JMeter: setUp thread group): Supabase Auth da 429 pasadas 30 peticiones de token en 5 min por IP.
 - Alta en la base: supabase/alta-api-performance.sql (incluye la migración 20261120020000: categoría `performance`).
   Lector de tests de la web: .feature (Karate, como Cucumber), .bru, colección Postman y cases.json de JMeter (app/[tool]/page.tsx).
-- La API (app/api/runs/route.ts) guarda las últimas 4 runs de cada herramienta (una run = un lanzamiento, aunque mezcle suites).
+- RETENCIÓN (lib/prune.ts): solo las 4 últimas runs de cada herramienta (una run = un lanzamiento, aunque mezcle suites); la nueva pisa a la
+  más antigua (filas, resultados y ficheros de evidence; nunca borra runs en cola o en curso). Se aplica al lanzar (/api/runs) y al terminar
+  cada run (/api/runs/advance -> pruneAllTools), así también cubre runs creadas por scripts. Es por el plan gratis de Supabase. Los informes
+  de GitHub Pages (rama gh-pages) NO se podan solos.
   El Mapa de suites solo muestra las suites de esas runs.
 - EVIDENCIAS de API/carga: cada test sube un JSON (petición y respuesta; en JMeter, mediciones) al bucket evidence vía
   shared/publish-results.js (`evidence_data`), sin cabeceras de clave, tokens, contraseñas, emails ni UUID. La web lo enlaza como

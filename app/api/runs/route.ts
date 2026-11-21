@@ -2,11 +2,10 @@ import { createHash } from "node:crypto";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { dispatchWorkflow } from "@/lib/github/dispatch";
 import { advanceQueue, MAX_WAITING } from "@/lib/queue";
+import { pruneOldRunsForTool } from "@/lib/prune";
 
 const MAX_RUNS_PER_IP_PER_HOUR = 3;
 const MAX_RUNS_PER_DAY = 50;
-// Una run = un lanzamiento (puede mezclar tests de varias suites). Se guardan las 4 últimas de cada herramienta.
-const MAX_STORED_RUNS_PER_TOOL = 4;
 const SLUG = /^[a-z0-9-]{1,40}$/;
 
 type SuiteRow = {
@@ -31,52 +30,6 @@ function clientIpHash(request: Request): string {
     request.headers.get("x-real-ip") ||
     "unknown";
   return createHash("sha256").update(`${process.env.IP_SALT ?? ""}:${ip}`).digest("hex");
-}
-
-async function pruneOldRunsForTool(db: ReturnType<typeof getAdminClient>, toolId: string) {
-  const { data: toolSuites } = await db
-    .from("suites")
-    .select("id")
-    .eq("tool_id", toolId);
-
-  const suiteIds = (toolSuites ?? []).map((s) => s.id);
-  if (suiteIds.length === 0) return;
-
-  const { data: toolRuns } = await db
-    .from("runs")
-    .select("id")
-    .in("suite_id", suiteIds)
-    .order("created_at", { ascending: false });
-
-  if (!toolRuns) return;
-
-  const idsToDelete = toolRuns.slice(MAX_STORED_RUNS_PER_TOOL).map((r) => r.id);
-  if (idsToDelete.length === 0) return;
-
-  // 1. Limpiar capturas del bucket 'evidence' asociadas a esas runs
-  for (const oldRunId of idsToDelete) {
-    try {
-      // Las capturas se suben a runs/<run_id>/ (shared/send-to-supabase.js uploadEvidence).
-      const { data: files } = await db.storage.from("evidence").list(`runs/${oldRunId}`);
-      if (files && files.length > 0) {
-        const paths = files.map((f) => `runs/${oldRunId}/${f.name}`);
-        await db.storage.from("evidence").remove(paths);
-      }
-    } catch {
-      // Ignorar si no existen evidencias en storage para esa run
-    }
-  }
-
-  // 2. Eliminar registros relacionados y las runs antiguas. run_requests NO se toca: es el
-  // historial del límite por IP y por día, y debe sobrevivir a la limpieza (migración
-  // 20261120010000: ya no depende de runs).
-  await Promise.all([
-    db.from("run_events").delete().in("run_id", idsToDelete),
-    db.from("test_results").delete().in("run_id", idsToDelete),
-    db.from("run_summary").delete().in("run_id", idsToDelete),
-  ]);
-
-  await db.from("runs").delete().in("id", idsToDelete);
 }
 
 export async function POST(request: Request) {
