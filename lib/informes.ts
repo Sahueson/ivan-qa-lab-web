@@ -49,7 +49,7 @@ export async function buildInforme(db: SupabaseClient, grupo: Grupo): Promise<In
   const lentos: { test: string; ms: number }[] = [];
   for (const tool of tools ?? []) {
     const { data: suites } = await db.from("suites").select("id, slug").eq("tool_id", tool.id);
-    const suiteSlug = new Map((suites ?? []).map((s) => [s.id as string, s.slug as string]));
+    const suiteSlug = new Map((suites ?? []).filter((s) => s.slug !== "j-demo-fallos").map((s) => [s.id as string, s.slug as string]));
     const { data: runs } = await db
       .from("runs")
       .select("id, suite_id, created_at")

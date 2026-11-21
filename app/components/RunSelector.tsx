@@ -56,6 +56,8 @@ export default function RunSelector({
   const [activeToolSlug, setActiveToolSlug] = useState(initialToolSlug);
   const suites = suitesByTool[activeToolSlug] || [];
   const allTests = testsByTool[activeToolSlug] || [];
+  // "Seleccionar todas" no incluye la Demo de fallos (falla a propósito): solo se lanza eligiéndola a mano.
+  const selectableTests = allTests.filter((t) => t.suiteSlug !== 'j-demo-fallos');
 
   const [activeSuiteSlug, setActiveSuiteSlug] = useState<string>(suites[0]?.slug || 'a-auth');
   const [selectedTestIds, setSelectedTestIds] = useState<string[]>([]);
@@ -143,10 +145,10 @@ export default function RunSelector({
   };
 
   const toggleAllSuites = () => {
-    if (selectedTestIds.length === allTests.length && allTests.length > 0) {
+    if (selectedTestIds.length === selectableTests.length && selectableTests.length > 0) {
       setSelectedTestIds([]);
     } else {
-      setSelectedTestIds(allTests.map((t) => t.id));
+      setSelectedTestIds(selectableTests.map((t) => t.id));
     }
   };
 
@@ -193,7 +195,7 @@ export default function RunSelector({
     }
   };
 
-  const allGlobalSelected = allTests.length > 0 && selectedTestIds.length === allTests.length;
+  const allGlobalSelected = selectableTests.length > 0 && selectedTestIds.length === selectableTests.length && selectableTests.every((t) => selectedTestIds.includes(t.id));
   const allCurrentSuiteSelected =
     visibleTests.length > 0 && visibleTests.every((t) => selectedTestIds.includes(t.id));
 
@@ -350,8 +352,8 @@ export default function RunSelector({
                   }`}
                 >
                   {allGlobalSelected
-                    ? `Desmarcar todas (${allTests.length} tests)`
-                    : `Seleccionar todas las suites (${allTests.length} tests)`}
+                    ? `Desmarcar todas (${selectableTests.length} tests)`
+                    : `Seleccionar todas las suites (${selectableTests.length} tests)`}
                 </button>
               )}
             </div>

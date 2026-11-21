@@ -159,18 +159,6 @@ export default function Navbar({ tools }: { tools: NavTool[] }) {
 
         {/* Controles derecha: Acceso rápido móvil + Modo Día/Noche + Nuevo Run */}
         <div className="flex items-center gap-2.5">
-          <Link href="/informes" className="md:hidden px-3.5 py-2 rounded-full border text-xs font-medium bg-[var(--bg-surface)] border-[var(--border-subtle)]">Informes</Link>
-          <Link href="/bugs" className="md:hidden px-3.5 py-2 rounded-full border text-xs font-medium bg-[var(--bg-surface)] border-[var(--border-subtle)]">Bugs</Link>
-          <Link
-            href="/about"
-            className={`md:hidden px-3.5 py-2 rounded-full border text-xs font-medium transition ${
-              pathname === '/about'
-                ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] border-transparent'
-                : 'bg-[var(--bg-surface)] border-[var(--border-subtle)]'
-            }`}
-          >
-            About me
-          </Link>
 
           <button
             onClick={toggleTheme}
@@ -224,6 +212,29 @@ export default function Navbar({ tools }: { tools: NavTool[] }) {
           </div>
         </div>
       </div>
+
+      {/* Móvil: los enlaces van en su propia fila (desplazable), no apretados junto a los botones */}
+      <nav className="md:hidden flex items-center gap-2 overflow-x-auto px-4 pb-3 -mt-1" aria-label="Secciones">
+        {[
+          { href: '/', label: 'Studio' },
+          { href: '/informes', label: 'Informes' },
+          { href: '/bugs', label: 'Bugs' },
+          { href: '/about', label: 'About me' },
+        ].map((item) => {
+          const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`shrink-0 px-3.5 py-1.5 rounded-full border text-xs font-medium transition ${
+                active ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] border-transparent' : 'bg-[var(--bg-surface)] border-[var(--border-subtle)]'
+              }`}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
     </header>
   );
 }
