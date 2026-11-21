@@ -55,6 +55,7 @@ export default function RunSelector({
 }) {
   const [activeToolSlug, setActiveToolSlug] = useState(initialToolSlug);
   const suites = suitesByTool[activeToolSlug] || [];
+  const suiteLabel = (slug: string, name?: string) => slug === 'all' ? 'Todas las suites' : `${slug.charAt(0).toUpperCase()} · ${name ?? slug}`;
   const allTests = testsByTool[activeToolSlug] || [];
   // "Seleccionar todas" no incluye la Demo de fallos (falla a propósito): solo se lanza eligiéndola a mano.
   const selectableTests = allTests.filter((t) => t.suiteSlug !== 'j-demo-fallos');
@@ -380,7 +381,7 @@ export default function RunSelector({
                         : 'bg-[var(--bg-surface-muted)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                     }`}
                   >
-                    <span>{s.name}</span>
+                    <span>{suiteLabel(s.slug, s.name)}</span>
                     {suiteTests.length > 0 && (
                       <span
                         className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
@@ -406,7 +407,7 @@ export default function RunSelector({
               <h2 className="text-lg font-semibold">
                 {searchQuery.trim()
                   ? `Resultados de búsqueda (${visibleTests.length})`
-                  : `Escenarios en ${activeSuiteSlug} (${visibleTests.length})`}
+                  : `Escenarios en ${suiteLabel(activeSuiteSlug, suites.find((x) => x.slug === activeSuiteSlug)?.name)} (${visibleTests.length})`}
               </h2>
               <p className="text-xs text-[var(--text-secondary)]">
                 {selectedSuites.length > 1

@@ -1,7 +1,6 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { getAdminClient } from '@/lib/supabase/admin';
-import SuiteGrid from './components/SuiteGrid';
 
 // Mini gráfico de la tarjeta negra: tasa de éxito acumulada, del run más antiguo al más reciente.
 function Sparkline({ statuses }: { statuses: string[] }) {
@@ -246,8 +245,6 @@ async function StudioDashboard() {
           </div>
         </div>
 
-        {/* Mapa herramienta × suite con el último resultado */}
-        <SuiteGrid />
         </div>
 
         {/* Panel negro estilo "Next up": último run destacado + anteriores */}
