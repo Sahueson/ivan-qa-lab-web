@@ -361,6 +361,11 @@ La web ya copia: cabecera con navegación en píldora, modo noche, botón negro 
   (npx tsx scripts/qa-lab.ts bug|comentar|informe, con LAB_URL/LAB_SERVICE_KEY de .qa-lab.env).
   Gotcha: next.config tiene cacheComponents -> NO usar `export const dynamic`; el contenido con datos va en un componente async
   dentro de <Suspense> (como app/runs/[id]/results). Un `dynamic` rompe el build y Vercel deja la versión anterior. Migración supabase/migrations/20261121000000_bugs_informes.sql (idempotente, con un bug de ejemplo).
+- SUITE J "Demo de fallos" (slug j-demo-fallos, columna J del mapa): escenarios que FALLAN A PROPÓSITO para enseñar un reporte de bug.
+  Front (Playwright, Selenium x2, Cucumber, Cypress): 7 casos TC-J01..J07 (requisitos inexistentes: ver partidas de otro equipo, panel de
+  métricas, botón Crear partida...). Newman/Bruno/Karate: 3 casos (spec.js); JMeter: PERF-17..19 con umbral irreal. Los run.sh de
+  API/perf NO la incluyen en el valor por defecto (ALL = A-I); la web siempre pasa SUITE. Verificado en CI: 0 pasan, 7 o 3 fallan.
+  Gotcha: `git add -A` en Windows pierde el bit de ejecución de run.sh -> `git update-index --chmod=+x run.sh` (Permission denied en CI).
 - Los 6 secretos de cada repo los pone poner-secretos.sh (raíz de ivan-qa-lab, local) desde .qa-lab.env. Gotchas: run.sh sin bit de
   ejecución en Windows -> el workflow usa `bash ./run.sh`; jmeter.bat falla con rutas con espacios en Windows (run.sh lanza el JAR);
   Karate 2.x (CLI) y 1.x (JAR) generan informes en directorios distintos (el conversor busca los json de forma recursiva).
