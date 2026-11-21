@@ -44,21 +44,10 @@ create policy "public read" on bugs for select using (true);
 create policy "public read" on bug_comments for select using (true);
 create policy "public read" on informes for select using (true);
 
--- Bug de ejemplo (real: pendiente de corregir en la app) con su ciclo comentario, resolución, comentario.
-insert into bugs (title, description, severity, status, tool_slug, suite_slug, test_name)
+-- Bug real (confirmado en el staging el 20-nov, pendiente de corregir en la app). Los comentarios y el bug de ejemplo "[Ejemplo] TC-J01"
+-- se gestionan con scripts/qa-lab.ts.
+insert into bugs (title, description, severity, status, tool_slug, suite_slug)
 select 'admin_mad crea y borra fechas de "Ambos equipos" (RLS de team_blackouts)',
-       'Un admin de MAD puede crear y borrar fechas sin partida marcadas para ambos equipos, cuando solo debería gestionar las de su equipo.' || chr(10) ||
-       'Pasos: iniciar sesión como admin MAD, crear una fecha sin partida con alcance "Ambos equipos" y borrarla. Esperado: 401/403. Obtenido: la operación se completa.',
-       'alta', 'abierto', 'newman', 'h-calendario', 'TC-H04 Jugador MAD no crea fechas sin partida'
+       'Un admin de MAD puede crear y borrar fechas sin partida marcadas para ambos equipos por API, cuando solo debería gestionar las de su equipo.',
+       'alta', 'abierto', 'newman', 'h-calendario'
 where not exists (select 1 from bugs where title like 'admin_mad crea y borra fechas%');
-
-insert into bug_comments (bug_id, kind, author, body, created_at)
-select b.id, v.kind, v.author, v.body, now() - v.ago
-from bugs b
-cross join (values
-  ('comentario', 'QA', 'Reproducido en staging con el usuario QA admin MAD. Adjunto la petición y la respuesta del caso de API.', interval '3 hours'),
-  ('comentario', 'Desarrollo', 'Confirmado: la política de INSERT/DELETE de team_blackouts no distingue el alcance "Ambos equipos". Se corrige en la próxima migración.', interval '2 hours'),
-  ('resolucion', 'Desarrollo', 'Política corregida: solo super admin gestiona fechas de ambos equipos. Pendiente de verificación por QA.', interval '1 hour')
-) as v(kind, author, body, ago)
-where b.title like 'admin_mad crea y borra fechas%'
-  and not exists (select 1 from bug_comments c where c.bug_id = b.id);
