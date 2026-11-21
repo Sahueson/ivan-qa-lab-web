@@ -59,7 +59,7 @@ export default async function InformeView({ data }: { data: InformeData }) {
             <thead className="text-left text-xs text-[var(--text-secondary)]">
               <tr>
                 <th className="p-4">{t('Herramienta')}</th><th className="p-4">Suites</th><th className="p-4">{t('Pasan')}</th>
-                <th className="p-4">{t('Fallan')}</th><th className="p-4">{t('Omitidos')}</th><th className="p-4">{t('Éxito')}</th><th className="p-4">{t('Duración')}</th>
+                <th className="p-4">{t('Fallan')}</th><th className="p-4">{t('Omitidos')}</th><th className="p-4">{t('Éxito')}</th><th className="p-4">{t('Duración')}</th><th className="p-4">{t('Actualizado')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border-subtle)]">
@@ -72,6 +72,7 @@ export default async function InformeView({ data }: { data: InformeData }) {
                   <td className="p-4">{t.skipped}</td>
                   <td className="p-4">{pct(t.passed, t.total)}%</td>
                   <td className="p-4">{(t.duration_ms / 1000).toFixed(1)} s</td>
+                  <td className="p-4 text-xs text-[var(--text-secondary)]">{t.actualizado ? new Date(t.actualizado).toLocaleDateString(dateLocale(locale), { day: '2-digit', month: 'short', timeZone: 'Europe/Madrid' }) : '—'}</td>
                 </tr>
               ))}
             </tbody>

@@ -148,6 +148,12 @@ export default function Navbar({ tools }: { tools: NavTool[] }) {
             {t('Informes')}
           </Link>
           <Link
+            href="/demo-fallos"
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${pathname.startsWith('/demo-fallos') ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+          >
+            {t('Fallos')}
+          </Link>
+          <Link
             href="/bugs"
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${pathname.startsWith('/bugs') ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
           >
@@ -222,6 +228,7 @@ export default function Navbar({ tools }: { tools: NavTool[] }) {
         {[
           { href: '/', label: 'Inicio' },
           { href: '/informes', label: 'Informes' },
+          { href: '/demo-fallos', label: 'Fallos' },
           { href: '/bugs', label: 'Bugs' },
           { href: '/about', label: 'Sobre mí' },
         ].map((item) => {

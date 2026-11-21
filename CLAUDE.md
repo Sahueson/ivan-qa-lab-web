@@ -389,6 +389,12 @@ La web ya copia: cabecera con navegación en píldora, modo noche, botón negro 
   Al añadir texto nuevo: escribirlo en español con t() y añadir su par en i18n-en.ts.
 - <html translate="no"> + <meta name="google" content="notranslate">: el traductor automático de Chrome traducía la web en inglés al español y rompía los textos
   (Playwright -> "Dramaturgo") y puede provocar errores de React. El idioma lo gestiona la propia web. "Studio" (nombre heredado del rediseño del 20-nov) pasó a Inicio / Home.
+- INFORME GENERAL SIEMPRE COMPLETO (21-nov): tabla suite_results (migración 20261121020000_suite_results.sql) = último resultado de cada herramienta × suite, que NO se borra
+  (~90 filas). La rellena lib/suite-results.ts (syncSuiteResults) justo antes de podar runs (lib/prune.ts); buildInforme (lib/informes.ts) lee de ahí y, si la tabla
+  no existe o está vacía, usa las runs guardadas. Así los informes ejecutivos reflejan las 9 suites aunque solo se guarden 4 runs por herramienta.
+- /demo-fallos (21-nov): página para enseñar a selección cómo se ve un fallo de principio a fin (explicación en 4 pasos, última run de cada herramienta con enlace a la run
+  completa y al informe HTML, mensajes reales de error, y salto a los bugs #1 real y #2 de ejemplo). prune.ts conserva la ÚLTIMA run de j-demo-fallos de cada herramienta
+  y no gasta uno de los 4 huecos.
 - MAPA DE SUITES ELIMINADO (21-nov, decisión de Iván): con 4 runs por herramienta casi siempre estaba vacío. La letra de la suite va en su nombre
   (RunSelector.suiteLabel: "A · Autenticación y perfiles"). "Seleccionar todas las suites" excluye la J (Demo de fallos).
 - Los 6 secretos de cada repo los pone poner-secretos.sh (raíz de ivan-qa-lab, local) desde .qa-lab.env. Gotchas: run.sh sin bit de
