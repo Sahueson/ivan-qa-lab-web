@@ -14,6 +14,22 @@ async function ResultsContent({ params }: { params: Promise<{ id: string }> }) {
   ]);
 
   const summary = summaryRes.data;
+
+  // Informe HTML de la herramienta (Newman, JMeter...), publicado en GitHub Pages del repo de la herramienta
+  // (https://<usuario>.github.io/<repo>/<run_id>/). Solo se enseña el enlace si existe.
+  let reportUrl: string | null = null;
+  const { data: runRow } = await db.from('runs').select('suites(tools(github_repo))').eq('id', runId).maybeSingle();
+  const repo = (runRow as unknown as { suites?: { tools?: { github_repo?: string } } } | null)?.suites?.tools?.github_repo;
+  if (repo && /^[\w.-]+\/[\w.-]+$/.test(repo)) {
+    const [owner, name] = repo.split('/');
+    const url = `https://${owner.toLowerCase()}.github.io/${name}/${runId}/`;
+    try {
+      const head = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(3000) });
+      if (head.ok) reportUrl = url;
+    } catch {
+      // sin informe publicado
+    }
+  }
   // Mismo orden que el selector: TC-SMOKE, TC-A01, TC-A01b, TC-A02...
   const tests = [...(testsRes.data || [])].sort((a, b) => compareCaseNames(a.name, b.name));
 
@@ -40,12 +56,24 @@ async function ResultsContent({ params }: { params: Promise<{ id: string }> }) {
           <h1 className="text-4xl font-semibold tracking-tight">Reports</h1>
           <p className="text-xs text-[var(--text-secondary)] font-mono mt-1">RUN ID: {runId}</p>
         </div>
-        <Link
-          href="/"
-          className="px-4 py-2 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-sm font-medium hover:opacity-80 transition self-start"
-        >
-          ← Volver a Studio
-        </Link>
+        <div className="flex flex-wrap gap-2 self-start">
+          {reportUrl && (
+            <a
+              href={reportUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="px-4 py-2 rounded-full bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] text-sm font-medium hover:opacity-90 transition"
+            >
+              Ver informe HTML ↗
+            </a>
+          )}
+          <Link
+            href="/"
+            className="px-4 py-2 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-sm font-medium hover:opacity-80 transition"
+          >
+            ← Volver a Studio
+          </Link>
+        </div>
       </div>
 
       {/* 4 Tarjetas KPI estilo Reports */}
