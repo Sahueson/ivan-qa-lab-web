@@ -101,7 +101,7 @@ export default function Navbar({ tools }: { tools: NavTool[] }) {
         </Link>
 
         {/* Píldora central: Studio · un desplegable por tipo de prueba · About me */}
-        <nav ref={navRef} className="hidden md:flex items-center gap-1 p-1.5 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-xs">
+        <nav ref={navRef} className="hidden lg:flex items-center gap-1 p-1.5 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-xs">
           <Link
             href="/"
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${pathname === '/' ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
@@ -213,7 +213,7 @@ export default function Navbar({ tools }: { tools: NavTool[] }) {
       </div>
 
       {/* Móvil: los enlaces van en su propia fila (desplazable), no apretados junto a los botones */}
-      <nav className="md:hidden flex items-center gap-2 overflow-x-auto px-4 pb-3 -mt-1" aria-label="Secciones">
+      <nav className="lg:hidden flex items-center gap-2 overflow-x-auto px-4 pb-3 -mt-1" aria-label="Secciones">
         {[
           { href: '/', label: 'Studio' },
           { href: '/informes', label: 'Informes' },
