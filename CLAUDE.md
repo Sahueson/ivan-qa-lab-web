@@ -406,4 +406,4 @@ La web ya copia: cabecera con navegación en píldora, modo noche, botón negro 
   Fallos que salieron en CI y no en local: Karate recibía la lista de features vacía (los arrays de Bash no sobreviven a
   `export -f`) y el JAR 1.x no tiene la carpeta actual en el classpath (java -cp ".karate/karate.jar:.").
   estimated_seconds de Newman, Bruno, Karate y JMeter = duración real del job + ~10 s (35-65 s por suite).
-- PENDIENTE: Appium (móvil) cuando exista la parte móvil de la web; ajustar estimated_seconds con lo medido en CI.
+- Appium (móvil): HECHO. Repo `qa-appium`, workflow con `reactivecircus/android-emulator-runner` (API 34, KVM), APK de debug en la release `apk-staging` (compilado contra staging con `VITE_ENABLE_QA_LOGIN=true`), 1 suite `a-auth` (4 casos, ~240 s). `autoXvfb:false` y `npm install` (el lock de Windows no vale para `npm ci`). Migración 20261122000000_appium.sql. El token fine-grained de la web debe incluir qa-appium.
