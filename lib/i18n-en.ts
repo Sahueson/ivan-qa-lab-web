@@ -298,4 +298,5 @@ export const EN: Record<string, string> = {
   'Un fallo no siempre es un defecto. Aquí hay dos ejemplos del registro de bugs: uno real, que sigue abierto, y otro de esta demo, cerrado como «no es un bug» porque el test pedía algo que la app no promete.': 'A failure is not always a defect. Here are two examples from the bug log: a real one that is still open, and one from this demo, closed as "not a bug" because the test asked for something the app does not promise.',
   'Bug real (abierto)': 'Real bug (open)',
   'Ejemplo de esta demo (cerrado)': 'Example from this demo (closed)',
+  '+ Nuevo': '+ New',
 };

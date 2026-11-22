@@ -94,21 +94,21 @@ export default function Navbar({ tools }: { tools: NavTool[] }) {
     <header className="md:sticky md:top-0 z-40 w-full backdrop-blur-md bg-[var(--bg-canvas)]/85 print:hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-8 h-16 md:h-20 flex items-center justify-between gap-4">
         {/* Marca izquierda limpia */}
-        <Link href="/" className="flex items-center gap-3 shrink-0">
+        <Link href="/" className="flex items-center gap-2.5 sm:gap-3 shrink-0">
           <div className="w-10 h-10 rounded-full bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] flex items-center justify-center font-bold text-sm tracking-tighter">
             QA
           </div>
-          <div className="leading-tight">
+          <div className="hidden min-[380px]:block leading-tight whitespace-nowrap">
             <p className="font-semibold text-base tracking-tight">Ivan QA Lab</p>
-            <p className="text-xs text-[var(--text-secondary)]">Automation Studio</p>
+            <p className="hidden sm:block text-xs text-[var(--text-secondary)]">Automation Studio</p>
           </div>
         </Link>
 
         {/* Píldora central: Studio · un desplegable por tipo de prueba · About me */}
-        <nav ref={navRef} className="hidden lg:flex items-center gap-1 p-1.5 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-xs">
+        <nav ref={navRef} className="hidden xl:flex items-center gap-1 p-1.5 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-xs">
           <Link
             href="/"
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${pathname === '/' ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+            className={`px-3 2xl:px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${pathname === '/' ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
           >
             {t('Inicio')}
           </Link>
@@ -122,7 +122,7 @@ export default function Navbar({ tools }: { tools: NavTool[] }) {
                 <button
                   onClick={() => setOpenCategory(isOpen ? null : cat.id)}
                   aria-expanded={isOpen}
-                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5 cursor-pointer ${isActive ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+                  className={`px-3 2xl:px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${isActive ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
                 >
                   {t(cat.label)}
                   <svg className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -143,32 +143,32 @@ export default function Navbar({ tools }: { tools: NavTool[] }) {
 
           <Link
             href="/informes"
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${pathname.startsWith('/informes') ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+            className={`px-3 2xl:px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${pathname.startsWith('/informes') ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
           >
             {t('Informes')}
           </Link>
           <Link
             href="/demo-fallos"
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${pathname.startsWith('/demo-fallos') ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+            className={`px-3 2xl:px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${pathname.startsWith('/demo-fallos') ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
           >
             {t('Fallos')}
           </Link>
           <Link
             href="/bugs"
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${pathname.startsWith('/bugs') ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+            className={`px-3 2xl:px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${pathname.startsWith('/bugs') ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
           >
             Bugs
           </Link>
           <Link
             href="/about"
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${pathname.startsWith('/about') ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+            className={`px-3 2xl:px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${pathname.startsWith('/about') ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
           >
             {t('Sobre mí')}
           </Link>
         </nav>
 
         {/* Controles derecha: Acceso rápido móvil + Modo Día/Noche + Nuevo Run */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
           <LanguageToggle />
 
           <button
@@ -191,9 +191,10 @@ export default function Navbar({ tools }: { tools: NavTool[] }) {
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setMenuOpen((prev) => !prev)}
-              className="px-4 py-2 h-10 rounded-full bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] text-sm font-medium hover:opacity-90 transition flex items-center gap-2 cursor-pointer"
+              className="px-3.5 sm:px-4 py-2 h-10 rounded-full bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] text-sm font-medium whitespace-nowrap hover:opacity-90 transition flex items-center gap-1.5 sm:gap-2 cursor-pointer"
             >
-              <span>{t('+ Nuevo Run')}</span>
+              <span className="sm:hidden">{t('+ Nuevo')}</span>
+              <span className="hidden sm:inline">{t('+ Nuevo Run')}</span>
               <svg
                 className={`w-3.5 h-3.5 transition-transform ${menuOpen ? 'rotate-180' : ''}`}
                 viewBox="0 0 24 24"
@@ -224,7 +225,7 @@ export default function Navbar({ tools }: { tools: NavTool[] }) {
       </div>
 
       {/* Móvil: los enlaces van en su propia fila (desplazable), no apretados junto a los botones */}
-      <nav className="lg:hidden flex items-center gap-2 overflow-x-auto px-4 pb-3 -mt-1" aria-label={t('Secciones')}>
+      <nav className="xl:hidden flex items-center gap-2 overflow-x-auto px-4 pb-3 -mt-1" aria-label={t('Secciones')}>
         {[
           { href: '/', label: 'Inicio' },
           { href: '/informes', label: 'Informes' },
