@@ -11,7 +11,7 @@ const AREAS: { id: 'front' | 'back' | 'perf'; title: string; blurb: string; tool
     id: 'front',
     title: 'Front (navegador real)',
     blurb: 'Cada test inicia sesión con un rol y busca algo que la app no ofrece: por ejemplo, que el jugador MAD vea las partidas del otro equipo.',
-    tools: ['playwright', 'selenium-java', 'selenium-python', 'cucumber', 'cypress'],
+    tools: ['playwright', 'selenium-java', 'selenium-python', 'cucumber', 'cypress', 'appium'],
     cases: 7,
   },
   {
@@ -78,7 +78,7 @@ async function DemoFallosContent() {
       <div>
         <h1 className="text-4xl font-semibold tracking-tight">{t('Demo de fallos')}</h1>
         <p className="text-sm text-[var(--text-secondary)] mt-2 max-w-3xl leading-relaxed">
-          {t('Una prueba que pasa no enseña mucho. Esta suite falla a propósito en las 9 herramientas para mostrar cómo se ve un fallo de principio a fin: qué se esperaba, qué se obtuvo, la evidencia, el informe y cómo se registra el bug. No cuenta para los resultados reales (suites A–I).')}
+          {t('Una prueba que pasa no enseña mucho. Esta suite falla a propósito en las 10 herramientas para mostrar cómo se ve un fallo de principio a fin: qué se esperaba, qué se obtuvo, la evidencia, el informe y cómo se registra el bug. No cuenta para los resultados reales (suites A–I).')}
         </p>
       </div>
 

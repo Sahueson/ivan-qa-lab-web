@@ -10,8 +10,8 @@ export const GRUPOS: Record<Grupo, { titulo: string; herramientas: string[]; des
   },
   front: {
     titulo: "Informe de front (web E2E)",
-    herramientas: ["playwright", "selenium-java", "selenium-python", "cucumber", "cypress"],
-    descripcion: "Flujos de usuario en navegador real contra la demo de Tactical Calendar, con cinco herramientas sobre los mismos casos.",
+    herramientas: ["playwright", "selenium-java", "selenium-python", "cucumber", "cypress", "appium"],
+    descripcion: "Flujos de usuario contra Tactical Calendar: cinco herramientas en navegador real y Appium dentro de la app Android, sobre los mismos casos.",
   },
   rendimiento: {
     titulo: "Informe de rendimiento",

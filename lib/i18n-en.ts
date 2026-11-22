@@ -180,7 +180,7 @@ export const EN: Record<string, string> = {
   'Informe de front (web E2E)': 'Front-end report (web E2E)',
   'Informe de rendimiento': 'Performance report',
   'Contratos y reglas de seguridad por filas de la API de Supabase del staging, comprobados con Newman, Bruno y Karate.': 'Contracts and row-level security rules of the staging Supabase API, checked with Newman, Bruno and Karate.',
-  'Flujos de usuario en navegador real contra la demo de Tactical Calendar, con cinco herramientas sobre los mismos casos.': 'User flows in a real browser against the Tactical Calendar demo, with five tools running the same cases.',
+  'Flujos de usuario contra Tactical Calendar: cinco herramientas en navegador real y Appium dentro de la app Android, sobre los mismos casos.': 'User flows against Tactical Calendar: five tools in a real browser and Appium inside the Android app, running the same cases.',
   'Tiempos de respuesta (percentil 95) de las consultas principales, por rol, con 5 usuarios virtuales y 10 iteraciones.': 'Response times (95th percentile) of the main queries, per role, with 5 virtual users and 10 iterations.',
   // ---- Bugs ----
   'Registro de incidencias encontradas por las pruebas: {a} abiertas de {n}. Lectura pública.': 'Log of issues found by the tests: {a} open out of {n}. Public read-only.',
@@ -274,7 +274,7 @@ export const EN: Record<string, string> = {
   'Volver al inicio': 'Back to home',
   // ---- Demo de fallos ----
   'Fallos': 'Failures',
-  'Una prueba que pasa no enseña mucho. Esta suite falla a propósito en las 9 herramientas para mostrar cómo se ve un fallo de principio a fin: qué se esperaba, qué se obtuvo, la evidencia, el informe y cómo se registra el bug. No cuenta para los resultados reales (suites A–I).': 'A passing test does not teach much. This suite fails on purpose in all 9 tools to show what a failure looks like from start to finish: what was expected, what was obtained, the evidence, the report and how the bug is logged. It does not count towards the real results (suites A–I).',
+  'Una prueba que pasa no enseña mucho. Esta suite falla a propósito en las 10 herramientas para mostrar cómo se ve un fallo de principio a fin: qué se esperaba, qué se obtuvo, la evidencia, el informe y cómo se registra el bug. No cuenta para los resultados reales (suites A–I).': 'A passing test does not teach much. This suite fails on purpose in all 10 tools to show what a failure looks like from start to finish: what was expected, what was obtained, the evidence, the report and how the bug is logged. It does not count towards the real results (suites A–I).',
   'La prueba falla': 'The test fails',
   'El test pide algo que la app no ofrece. Falla siempre, a propósito.': 'The test asks for something the app does not offer. It always fails, on purpose.',
   'El informe lo explica': 'The report explains it',
