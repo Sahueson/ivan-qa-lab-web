@@ -41,7 +41,8 @@ function gherkinScenarioNames(content: string): string[] {
   return names;
 }
 
-async function discoverTestsFromGitHub(
+// Lanza error si GitHub falla: así 'use cache' NO guarda un resultado vacío o parcial.
+async function discoverTestsCached(
   githubRepo: string | null | undefined,
   toolSlug: string,
   suites: SuiteItem[]
@@ -64,7 +65,7 @@ async function discoverTestsFromGitHub(
       headers,
       next: { revalidate: 300 },
     });
-    if (!repoRes.ok) return [];
+    if (!repoRes.ok) throw new Error(`GitHub repo ${repoRes.status}`);
     const repoData = await repoRes.json();
     const defaultBranch = repoData.default_branch || 'main';
 
@@ -73,7 +74,7 @@ async function discoverTestsFromGitHub(
       `https://api.github.com/repos/${cleanRepo}/git/trees/${defaultBranch}?recursive=1`,
       { headers, next: { revalidate: 300 } }
     );
-    if (!treeRes.ok) return [];
+    if (!treeRes.ok) throw new Error(`GitHub tree ${treeRes.status}`);
     const treeData = await treeRes.json();
     const files: { path: string; type: string }[] = treeData.tree || [];
 
@@ -103,15 +104,14 @@ async function discoverTestsFromGitHub(
     // 3. Leer contenido de los ficheros de test en paralelo
     await Promise.all(
       testFiles.map(async (file) => {
+        // raw.githubusercontent.com no gasta el límite de la API de GitHub (antes: una llamada por fichero).
+        const rawPath = file.path.split('/').map(encodeURIComponent).join('/');
         const contentRes = await fetch(
-          `https://api.github.com/repos/${cleanRepo}/contents/${encodeURIComponent(file.path)}?ref=${defaultBranch}`,
-          { headers, next: { revalidate: 300 } }
+          `https://raw.githubusercontent.com/${cleanRepo}/${defaultBranch}/${rawPath}`,
+          { next: { revalidate: 300 } }
         );
-        if (!contentRes.ok) return;
-        const fileJson = await contentRes.json();
-        if (!fileJson.content) return;
-
-        const content = Buffer.from(fileJson.content, 'base64').toString('utf-8');
+        if (!contentRes.ok) throw new Error(`GitHub contenido ${contentRes.status}`);
+        const content = await contentRes.text();
 
         // Detectar a qué suite pertenece según la ruta del archivo
         const lowerPath = file.path.toLowerCase();
@@ -245,7 +245,16 @@ async function discoverTestsFromGitHub(
 
     // Orden por código de caso, igual en todas las herramientas (lib/case-order.ts).
     return discovered.sort((a, b) => compareCaseNames(a.name, b.name) || a.id.localeCompare(b.id));
-  } catch {
+  } catch (e) {
+    throw e;
+  }
+}
+
+async function discoverTestsFromGitHub(githubRepo: string | null | undefined, toolSlug: string, suites: SuiteItem[]): Promise<DiscoveredTest[]> {
+  try {
+    return await discoverTestsCached(githubRepo, toolSlug, suites);
+  } catch (e) {
+    console.error('discoverTests failed', toolSlug, e);
     return [];
   }
 }
