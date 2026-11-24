@@ -83,6 +83,7 @@ export const EN: Record<string, string> = {
   'Puedes navegar entre suites y acumular tests de varias antes de lanzar': 'You can browse between suites and gather tests from several before launching',
   'Desmarcar todas ({n} tests)': 'Clear all ({n} tests)',
   'Varias suites': 'Several suites',
+  'Máx. 3 lanzamientos por hora y por visitante (50 al día en total). Una prueba a la vez: el resto espera en cola (hasta 5).': 'Max. 3 launches per hour per visitor (50 per day overall). One test at a time: the rest wait in a queue (up to 5).',
   'Límite de lanzamientos: 3 por hora y por visitante (50 al día en total). Si lo alcanzas, podrás volver a lanzar cuando pase una hora desde tu primer lanzamiento. Solo se ejecuta una prueba a la vez: las demás esperan en cola (hasta 5).': 'Launch limit: 3 per hour per visitor (50 per day overall). If you reach it, you can launch again an hour after your first launch. Only one test runs at a time: the others wait in a queue (up to 5).',
   'Seleccionar todas las suites ({n} tests)': 'Select all suites ({n} tests)',
   'Resultados de búsqueda ({n})': 'Search results ({n})',

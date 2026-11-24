@@ -518,6 +518,10 @@ export default function RunSelector({
                 ? t('Lanzar {n} tests ({m} suites)', { n: selectedTestIds.length, m: selectedSuites.length })
                 : selectedTestIds.length === 1 ? t('Lanzar 1 test') : t('Lanzar {n} tests', { n: selectedTestIds.length })}
             </button>
+            <p className="text-[11px] text-[var(--text-secondary)] sm:text-right max-w-xs leading-snug">
+              <span aria-hidden>ⓘ </span>
+              {t('Máx. 3 lanzamientos por hora y por visitante (50 al día en total). Una prueba a la vez: el resto espera en cola (hasta 5).')}
+            </p>
           </div>
         </div>
       </div>
