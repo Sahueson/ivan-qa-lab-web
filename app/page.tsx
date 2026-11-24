@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { getT } from '@/lib/i18n-server';
 import { dateLocale, type Locale } from '@/lib/i18n';
+import { groupByCategory, TOOL_HINTS } from '@/lib/tool-categories';
 
 // Mini gráfico de la tarjeta negra: tasa de éxito acumulada, del run más antiguo al más reciente.
 function Sparkline({ statuses, label }: { statuses: string[]; label: string }) {
@@ -145,7 +146,7 @@ async function StudioDashboard() {
   const { t, locale } = await getT();
   const db = getAdminClient();
 
-  const [toolsRes, runsRes, suitesRes, activeRes, waitingRes] = await Promise.all([
+  const [toolsRes, runsRes, suitesRes, activeRes, waitingRes, toolRunsRes] = await Promise.all([
     db.from('tools').select('*').order('name', { ascending: true }),
     db
       .from('runs')
@@ -155,6 +156,11 @@ async function StudioDashboard() {
     db.from('suites').select('slug'),
     db.from('runs').select('id', { count: 'exact', head: true }).in('status', ['queued', 'running']),
     db.from('runs').select('id', { count: 'exact', head: true }).eq('status', 'waiting'),
+    db
+      .from('runs')
+      .select('status, created_at, queue_suite, suites(slug, tools(slug)), run_summary(total, passed, failed)')
+      .order('created_at', { ascending: false })
+      .limit(80),
   ]);
 
   const tools = toolsRes.data || [];
@@ -175,15 +181,79 @@ async function StudioDashboard() {
   const activeCount = activeRes.count ?? 0;
   const waitingCount = waitingRes.count ?? 0;
   const lastReal = realRuns[0];
-  const lastHealth = !lastReal
-    ? { text: 'Sin runs', cls: 'bg-white/10 text-white/70' }
-    : lastReal.status === 'finished' && failedOf(lastReal) === 0
-      ? { text: 'Último run superado', cls: 'bg-emerald-500/20 text-emerald-400' }
-      : lastReal.status === 'finished'
-        ? { text: 'Último run con fallos', cls: 'bg-amber-500/20 text-amber-300' }
-        : ['queued', 'running', 'waiting'].includes(lastReal.status)
-          ? { text: 'En curso', cls: 'bg-sky-500/20 text-sky-300' }
-          : { text: 'Último run fallido', cls: 'bg-red-500/20 text-red-300' };
+  // Último resultado de cada herramienta (sin contar la demo de fallos ni lo que sigue en curso).
+  const rtf = new Intl.RelativeTimeFormat(dateLocale(locale), { numeric: 'auto' });
+  const ago = (iso: string) => {
+    const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+    if (min < 60) return rtf.format(-Math.max(min, 1), 'minute');
+    if (min < 1440) return rtf.format(-Math.round(min / 60), 'hour');
+    return rtf.format(-Math.round(min / 1440), 'day');
+  };
+  const lastByTool: Record<string, { text: string; tone: 'ok' | 'warn' | 'bad'; when: string }> = {};
+  for (const r of (toolRunsRes.data || []) as any[]) {
+    const slug = r.suites?.tools?.slug;
+    if (!slug || lastByTool[slug] || isDemo(r) || !['finished', 'failed'].includes(r.status)) continue;
+    const sm = Array.isArray(r.run_summary) ? r.run_summary[0] : r.run_summary;
+    if (r.status === 'failed' || !sm) lastByTool[slug] = { text: t('Fallido'), tone: 'bad', when: ago(r.created_at) };
+    else lastByTool[slug] = { text: `${sm.passed}/${sm.total}`, tone: sm.failed > 0 ? 'warn' : 'ok', when: ago(r.created_at) };
+  }
+  const toolList = tools.length > 0 ? tools : [{ id: '1', slug: 'playwright', name: 'Playwright E2E', enabled: true, category: 'front', live_execution: true }];
+  const groups = groupByCategory(toolList.map((x: any) => ({ ...x, category: x.category ?? 'otros' })));
+  const bigGroups = groups.filter((g) => g.tools.length > 1);
+  const smallGroups = groups.filter((g) => g.tools.length <= 1);
+  const toneCls = { ok: 'text-emerald-600 dark:text-emerald-400', warn: 'text-amber-600 dark:text-amber-400', bad: 'text-red-600 dark:text-red-400' };
+  const dotCls = { ok: 'bg-emerald-500', warn: 'bg-amber-500', bad: 'bg-red-500' };
+  const barCls = (r: any) => (r.status === 'finished' ? (failedOf(r) > 0 ? 'bg-amber-400' : 'bg-emerald-400') : r.status === 'failed' ? 'bg-red-400' : 'bg-sky-400');
+  const recentBars = [...realRuns].slice(0, 5).reverse();
+
+  const groupCard = (g: (typeof groups)[number]) => (
+    <section key={g.id} className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6 space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-semibold">{t(g.label)}</h3>
+          <p className="text-xs text-[var(--text-secondary)]">{t(g.hint)}</p>
+        </div>
+        <span className="px-2.5 py-1 rounded-full bg-[var(--bg-surface-muted)] border border-[var(--border-subtle)] text-xs text-[var(--text-secondary)] whitespace-nowrap">
+          {g.tools.length === 1 ? t('1 herramienta') : t('{n} herramientas', { n: g.tools.length })}
+        </span>
+      </div>
+      <div className={`grid grid-cols-1 gap-3 ${g.tools.length > 1 ? 'sm:grid-cols-2' : ''}`}>
+        {g.tools.map((tool: any) => {
+          const last = lastByTool[tool.slug];
+          const live = tool.enabled !== false && tool.live_execution !== false;
+          return (
+            <Link
+              key={tool.id ?? tool.slug}
+              href={`/${tool.slug}`}
+              className="p-4 rounded-2xl bg-[var(--bg-surface-muted)] border border-[var(--border-subtle)] hover:border-[var(--text-primary)] transition flex flex-col gap-3.5"
+            >
+              <div>
+                <p className="font-semibold text-base">{tool.name || tool.slug}</p>
+                {TOOL_HINTS[tool.slug] && <p className="text-xs text-[var(--text-secondary)] mt-0.5">{t(TOOL_HINTS[tool.slug])}</p>}
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2 text-xs text-[var(--text-secondary)] min-w-0">
+                  {last ? (
+                    <>
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${dotCls[last.tone]}`} />
+                      <span className="truncate"><b className={`font-semibold ${toneCls[last.tone]}`}>{last.text}</b> · {last.when}</span>
+                    </>
+                  ) : (
+                    <span>{t('Sin ejecutar')}</span>
+                  )}
+                </span>
+                {live ? (
+                  <span className="px-3.5 py-1.5 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs font-semibold whitespace-nowrap">{t('Lanzar')} →</span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase bg-amber-500/15 text-amber-600 dark:text-amber-400">{t('Pronto')}</span>
+                )}
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 space-y-8">
@@ -194,12 +264,14 @@ async function StudioDashboard() {
           <p className="text-sm text-[var(--text-secondary)] mt-1">
             {t('Entorno de pruebas: staging de Tactical Calendar · {n} herramientas', { n: tools.length })}
           </p>
-          <p className="text-xs text-[var(--text-secondary)] mt-2 max-w-2xl leading-relaxed">
-            <span aria-hidden>ⓘ </span>
-            {t('Límite de lanzamientos: 3 por hora y por visitante (50 al día en total). Si lo alcanzas, podrás volver a lanzar cuando pase una hora desde tu primer lanzamiento. Solo se ejecuta una prueba a la vez: las demás esperan en cola (hasta 5).')}
-          </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span
+            title={t('Límite de lanzamientos: 3 por hora y por visitante (50 al día en total). Si lo alcanzas, podrás volver a lanzar cuando pase una hora desde tu primer lanzamiento. Solo se ejecuta una prueba a la vez: las demás esperan en cola (hasta 5).')}
+            className="px-3.5 py-1.5 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs text-[var(--text-secondary)] cursor-help"
+          >
+            <span aria-hidden>ⓘ </span>{t('3 lanzamientos por hora · cola de hasta 5')}
+          </span>
           <span className="px-3.5 py-1.5 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs font-medium flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full ${activeCount > 0 ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
             {activeCount > 0 ? t('Ejecutando una prueba') : t('Libre para lanzar')}
@@ -219,9 +291,13 @@ async function StudioDashboard() {
             <span className="text-3xl font-semibold tracking-tight">{passRate}%</span>
             <Sparkline label={t('Evolución de la tasa de éxito en los últimos runs')} statuses={[...realRuns].reverse().map((r) => (r.status === 'finished' && failedOf(r) > 0 ? 'with_failures' : r.status))} />
           </div>
-          <div className="flex items-center gap-2 text-xs">
-            <span className={`px-2 py-0.5 rounded-full font-medium ${lastHealth.cls}`}>{t(lastHealth.text)}</span>
-          </div>
+          {recentBars.length > 0 && (
+            <div className="flex gap-1" role="img" aria-label={t('Resultado de los últimos runs')}>
+              {recentBars.map((r, i) => (
+                <span key={i} className={`flex-1 h-1.5 rounded-full ${barCls(r)}`} />
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-4 sm:p-6 flex flex-col justify-between min-h-[120px] sm:min-h-[156px]">
@@ -246,39 +322,12 @@ async function StudioDashboard() {
       {/* Grid inferior: columna izquierda (motores + mapa de suites) y panel negro del último run */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-2 space-y-6">
-        <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-lg font-semibold">{t('Motores de Automatización')}</h2>
-              <p className="text-xs text-[var(--text-secondary)]">{t('Selecciona un framework para configurar y lanzar pruebas')}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {(tools.length > 0 ? tools : [
-              { id: '1', slug: 'playwright', name: 'Playwright E2E', enabled: true },
-              { id: '2', slug: 'selenium', name: 'Selenium WebDriver', enabled: true },
-            ]).map((tool: any) => (
-              <Link
-                key={tool.id}
-                href={`/${tool.slug}`}
-                className="group p-4 sm:p-5 rounded-2xl bg-[var(--bg-surface-muted)] border border-[var(--border-subtle)] hover:border-[var(--text-primary)] transition flex flex-col justify-between gap-4"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-base capitalize">{tool.name || tool.slug}</span>
-                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
-                    {tool.enabled !== false ? t('Activo') : t('Inactivo')}
-                  </span>
-                </div>
-                <div className="hidden sm:flex items-center justify-between text-xs text-[var(--text-secondary)]">
-                  <span>{t('Elegir suite y lanzar')}</span>
-                  <span className="group-hover:translate-x-1 transition-transform">→</span>
-                </div>
-              </Link>
-            ))}
-          </div>
+        <div>
+          <h2 className="text-lg font-semibold">{t('Motores de Automatización')}</h2>
+          <p className="text-xs text-[var(--text-secondary)]">{t('Elige el tipo de prueba, después la herramienta, y lánzala')}</p>
         </div>
-
+        {bigGroups.map(groupCard)}
+        {smallGroups.length > 0 && <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">{smallGroups.map(groupCard)}</div>}
         </div>
 
         {/* Panel negro estilo "Next up": último run destacado + anteriores */}

@@ -6,36 +6,9 @@ import { usePathname } from 'next/navigation';
 import { useTheme } from './ThemeProvider';
 import { useT } from './I18nProvider';
 import LanguageToggle from './LanguageToggle';
+import { groupByCategory, TOOL_HINTS } from '@/lib/tool-categories';
 
 export type NavTool = { slug: string; name: string; category: string; live: boolean };
-
-// Orden y nombre visible de cada categoría (tools.category). Una categoría sin herramientas no sale.
-const CATEGORIES: { id: string; label: string; hint: string }[] = [
-  { id: 'front', label: 'Web E2E', hint: 'Navegador real contra la app' },
-  { id: 'api', label: 'API', hint: 'Contratos y reglas por HTTP' },
-  { id: 'mobile', label: 'Móvil', hint: 'App en dispositivo o emulador' },
-  { id: 'performance', label: 'Rendimiento', hint: 'Carga y tiempos de respuesta' },
-];
-
-// Línea corta bajo cada herramienta en los desplegables.
-const TOOL_HINTS: Record<string, string> = {
-  playwright: 'TypeScript · auto-wait',
-  'selenium-java': 'WebDriver · Java + JUnit',
-  'selenium-python': 'WebDriver · Python + pytest',
-  cucumber: 'BDD · Gherkin en español',
-  cypress: 'Dentro del navegador · TypeScript',
-  newman: 'Colecciones Postman',
-  bruno: 'Colecciones Bruno',
-  karate: 'DSL de API · Java',
-  appium: 'Android / iOS',
-};
-
-function groupByCategory(tools: NavTool[]) {
-  const known = CATEGORIES.map((c) => ({ ...c, tools: tools.filter((t) => t.category === c.id) }));
-  const others = tools.filter((t) => !CATEGORIES.some((c) => c.id === t.category));
-  if (others.length) known.push({ id: 'otros', label: 'Otras', hint: 'Otras herramientas', tools: others });
-  return known.filter((c) => c.tools.length > 0);
-}
 
 /** Opción de herramienta en un desplegable; las que aún no se pueden lanzar llevan "Pronto". */
 function ToolOption({ tool, onClick }: { tool: NavTool; onClick: () => void }) {
@@ -70,6 +43,9 @@ export default function Navbar({ tools }: { tools: NavTool[] }) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLElement>(null);
   const categories = groupByCategory(tools);
+  const [activeCat, setActiveCat] = useState<string | null>(null);
+  const activeTools = categories.find((c) => c.id === activeCat) ?? null;
+  const toolsActive = tools.some((x) => pathname === `/${x.slug}` || pathname.startsWith(`/${x.slug}/`)) || pathname.startsWith('/selenium');
 
   // Al navegar, se cierran los desplegables.
   useEffect(() => {
@@ -113,33 +89,48 @@ export default function Navbar({ tools }: { tools: NavTool[] }) {
             {t('Inicio')}
           </Link>
 
-          {categories.map((cat) => {
-            const isActive = cat.tools.some((x) => pathname === `/${x.slug}` || pathname.startsWith(`/${x.slug}/`))
-              || (cat.id === 'front' && pathname.startsWith('/selenium'));
-            const isOpen = openCategory === cat.id;
-            return (
-              <div key={cat.id} className="relative">
-                <button
-                  onClick={() => setOpenCategory(isOpen ? null : cat.id)}
-                  aria-expanded={isOpen}
-                  className={`px-3 2xl:px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${isActive ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
-                >
-                  {t(cat.label)}
-                  <svg className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M6 9l6 6 6-6" />
-                  </svg>
-                </button>
-                {isOpen && (
-                  <div className="absolute left-1/2 -translate-x-1/2 mt-3 w-64 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-lg p-1.5 z-50">
-                    <p className="px-3 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] uppercase tracking-wider">{t(cat.hint)}</p>
-                    {cat.tools.map((tool) => (
+          {/* Un solo desplegable "Herramientas": a la izquierda los tipos de prueba; al elegir uno, a su derecha solo sus herramientas */}
+          <div className="relative">
+            <button
+              onClick={() => { setOpenCategory(openCategory ? null : 'menu'); setActiveCat((c) => c ?? categories[0]?.id ?? null); }}
+              aria-expanded={Boolean(openCategory)}
+              className={`px-3 2xl:px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${toolsActive ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+            >
+              {t('Herramientas')}
+              <svg className={`w-3 h-3 transition-transform ${openCategory ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+            {openCategory && (
+              <div className="absolute left-0 mt-3 flex items-start gap-2 z-50">
+                <div className="w-60 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-lg p-1.5">
+                  {categories.map((cat) => (
+                    <button
+                      key={cat.id}
+                      onMouseEnter={() => setActiveCat(cat.id)}
+                      onClick={() => setActiveCat(cat.id)}
+                      className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-left cursor-pointer transition ${activeCat === cat.id ? 'bg-[var(--bg-surface-muted)]' : 'hover:bg-[var(--bg-surface-muted)]'}`}
+                    >
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium">{t(cat.label)}</span>
+                        <span className="block text-xs text-[var(--text-secondary)] truncate">{t(cat.hint)}</span>
+                      </span>
+                      <span className="text-[var(--text-secondary)]" aria-hidden>›</span>
+                    </button>
+                  ))}
+                </div>
+                {activeTools && (
+                  <div className="w-72 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-lg p-1.5">
+                    <p className="px-3 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] uppercase tracking-wider">{t(activeTools.label)}</p>
+                    {activeTools.tools.map((tool) => (
                       <ToolOption key={tool.slug} tool={tool} onClick={() => setOpenCategory(null)} />
                     ))}
                   </div>
                 )}
               </div>
-            );
-          })}
+            )}
+          </div>
+
 
           <Link
             href="/informes"

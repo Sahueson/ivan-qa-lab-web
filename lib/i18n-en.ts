@@ -302,4 +302,13 @@ export const EN: Record<string, string> = {
   'Bug real (abierto)': 'Real bug (open)',
   'Ejemplo de esta demo (cerrado)': 'Example from this demo (closed)',
   '+ Nuevo': '+ New',
+  'Herramientas': 'Tools',
+  '1 herramienta': '1 tool',
+  '{n} herramientas': '{n} tools',
+  'Sin ejecutar': 'Not run yet',
+  'Lanzar': 'Launch',
+  '3 lanzamientos por hora · cola de hasta 5': '3 launches per hour · queue of up to 5',
+  'Resultado de los últimos runs': 'Result of the latest runs',
+  'Elige el tipo de prueba, después la herramienta, y lánzala': 'Pick the test type, then the tool, and launch it',
+  'Carga y tiempos con JMeter': 'Load and timings with JMeter',
 };
