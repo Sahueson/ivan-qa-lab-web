@@ -161,7 +161,10 @@ async function StudioDashboard() {
   const allRuns = (runsRes.data || []) as any[];
   const recentRuns = allRuns.slice(0, 6); // lo último que pasó (panel "Último run")
   // Las cifras de salud no cuentan la Demo de fallos (falla a propósito) y "superada" = terminó Y no falló ningún test.
-  const realRuns = allRuns.filter((r) => r.suites?.slug !== 'j-demo-fallos').slice(0, 6);
+  // También se excluyen los lanzamientos que incluyen la demo entre varias suites (queue_suite = "a-auth,j-demo-fallos"):
+  // sus 7 fallos son a propósito y no dicen nada de la salud de la app.
+  const isDemo = (r: any) => r.suites?.slug === 'j-demo-fallos' || String(r.queue_suite ?? '').split(',').includes('j-demo-fallos');
+  const realRuns = allRuns.filter((r) => !isDemo(r)).slice(0, 6);
   const failedOf = (r: any) => {
     const sm = Array.isArray(r.run_summary) ? r.run_summary[0] : r.run_summary;
     return sm ? sm.failed : 0;
