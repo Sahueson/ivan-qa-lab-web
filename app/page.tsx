@@ -83,7 +83,7 @@ function LastRunPanel({ runs, t, locale }: { runs: RunRow[]; t: T; locale: Local
   const lastSummary = last ? runSummary(last) : null;
 
   return (
-    <div className="rounded-[24px] bg-[var(--bg-hero)] text-[var(--text-hero)] border border-[var(--border-subtle)] p-6 flex flex-col gap-5">
+    <div className="rounded-[24px] bg-[var(--bg-hero)] text-[var(--text-hero)] border border-[var(--border-subtle)] p-6 flex flex-col gap-5 h-full">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold">{t('Último run')}</h2>
@@ -118,7 +118,7 @@ function LastRunPanel({ runs, t, locale }: { runs: RunRow[]; t: T; locale: Local
           </div>
 
           {previous.length > 0 && (
-            <div>
+            <div className="flex-1">
               <p className="text-xs opacity-60 mb-2">{t('Anteriores')}</p>
               <div className="divide-y divide-white/10">
                 {previous.slice(0, 4).map((run) => (
@@ -320,18 +320,20 @@ async function StudioDashboard() {
       </div>
 
       {/* Grid inferior: columna izquierda (motores + mapa de suites) y panel negro del último run */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        <div className="lg:col-span-2 space-y-6">
+      <div className="space-y-4">
         <div>
           <h2 className="text-lg font-semibold">{t('Motores de Automatización')}</h2>
           <p className="text-xs text-[var(--text-secondary)]">{t('Elige el tipo de prueba, después la herramienta, y lánzala')}</p>
         </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+        <div className="lg:col-span-2 space-y-4">
         {bigGroups.map(groupCard)}
-        {smallGroups.length > 0 && <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">{smallGroups.map(groupCard)}</div>}
+        {smallGroups.length > 0 && <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">{smallGroups.map(groupCard)}</div>}
         </div>
 
         {/* Panel negro estilo "Next up": último run destacado + anteriores */}
         <LastRunPanel runs={recentRuns as unknown as RunRow[]} t={t} locale={locale} />
+      </div>
       </div>
 
     </div>
