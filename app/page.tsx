@@ -194,6 +194,10 @@ async function StudioDashboard() {
           <p className="text-sm text-[var(--text-secondary)] mt-1">
             {t('Entorno de pruebas: staging de Tactical Calendar · {n} herramientas', { n: tools.length })}
           </p>
+          <p className="text-xs text-[var(--text-secondary)] mt-2 max-w-2xl leading-relaxed">
+            <span aria-hidden>ⓘ </span>
+            {t('Límite de lanzamientos: 3 por hora y por visitante (50 al día en total). Si lo alcanzas, podrás volver a lanzar cuando pase una hora desde tu primer lanzamiento. Solo se ejecuta una prueba a la vez: las demás esperan en cola (hasta 5).')}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <span className="px-3.5 py-1.5 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs font-medium flex items-center gap-2">
