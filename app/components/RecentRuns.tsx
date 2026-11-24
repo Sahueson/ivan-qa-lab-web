@@ -13,7 +13,7 @@ export default async function RecentRuns({ toolIds, title }: { toolIds: string[]
   // Una sola consulta: las ejecuciones de las suites de esas herramientas (inner join filtra por herramienta).
   const { data } = await db
     .from('runs')
-    .select('id, status, created_at, suites!inner(slug, tool_id, tools(name)), run_summary(total, passed, failed, duration_ms)')
+    .select('id, status, created_at, queue_suite, suites!inner(slug, tool_id, tools(name)), run_summary(total, passed, failed, duration_ms)')
     .in('suites.tool_id', toolIds)
     .order('created_at', { ascending: false })
     .limit(8);
@@ -40,7 +40,7 @@ export default async function RecentRuns({ toolIds, title }: { toolIds: string[]
               >
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">
-                    {run.suites?.tools?.name ?? t('Herramienta')} · {run.suites?.slug ?? 'run'}
+                    {run.suites?.tools?.name ?? t('Herramienta')} · {run.queue_suite?.includes(',') ? t('Varias suites') : run.suites?.slug ?? 'run'}
                   </p>
                   <p className="text-xs text-[var(--text-secondary)] truncate">
                     {when(run.created_at)}

@@ -43,6 +43,7 @@ type RunRow = {
   id: string;
   status: string;
   created_at: string;
+  queue_suite?: string | null;
   suites?: { slug?: string; tools?: { name?: string; slug?: string } | null } | null;
   run_summary?: RunSummary | RunSummary[] | null;
 };
@@ -97,7 +98,7 @@ function LastRunPanel({ runs, t, locale }: { runs: RunRow[]; t: T; locale: Local
           <div className="rounded-2xl bg-white/5 border border-white/10 p-4 space-y-3">
             <p className="text-xs opacity-60">{t(runLabel(last))} · {runWhen(last.created_at, locale)}</p>
             <p className="text-xl font-semibold tracking-tight leading-tight">
-              {last.suites?.tools?.name || t('Suite')} · {last.suites?.slug || 'run'}
+              {last.suites?.tools?.name || t('Suite')} · {last.queue_suite?.includes(',') ? t('Varias suites') : last.suites?.slug || 'run'}
             </p>
             {lastSummary && (
               <p className="text-xs opacity-70">
@@ -124,7 +125,7 @@ function LastRunPanel({ runs, t, locale }: { runs: RunRow[]; t: T; locale: Local
                     <span className={`w-2 h-2 rounded-full shrink-0 ${runDot(run)}`} aria-hidden />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm truncate">
-                        {run.suites?.tools?.name || t('Suite')} · {run.suites?.slug || 'run'}
+                        {run.suites?.tools?.name || t('Suite')} · {run.queue_suite?.includes(',') ? t('Varias suites') : run.suites?.slug || 'run'}
                       </p>
                       <p className="text-xs opacity-50">{t(runLabel(run))} · {runWhen(run.created_at, locale)}</p>
                     </div>
@@ -148,7 +149,7 @@ async function StudioDashboard() {
     db.from('tools').select('*').order('name', { ascending: true }),
     db
       .from('runs')
-      .select('id, status, created_at, suites(slug, tools(name, slug)), run_summary(total, passed, failed, duration_ms)')
+      .select('id, status, created_at, queue_suite, suites(slug, tools(name, slug)), run_summary(total, passed, failed, duration_ms)')
       .order('created_at', { ascending: false })
       .limit(14),
     db.from('suites').select('slug'),

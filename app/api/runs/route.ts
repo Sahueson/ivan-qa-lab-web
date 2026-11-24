@@ -120,7 +120,7 @@ export async function POST(request: Request) {
 
     const { data: run, error: runError } = await db
       .from("runs")
-      .insert({ suite_id: row.id })
+      .insert({ suite_id: row.id, queue_suite: suiteInput, queue_grep: grepFilter })
       .select("id")
       .single<{ id: string }>();
 

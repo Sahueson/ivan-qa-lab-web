@@ -82,6 +82,7 @@ export const EN: Record<string, string> = {
   'Suites / Módulos ({n} disponibles)': 'Suites / Modules ({n} available)',
   'Puedes navegar entre suites y acumular tests de varias antes de lanzar': 'You can browse between suites and gather tests from several before launching',
   'Desmarcar todas ({n} tests)': 'Clear all ({n} tests)',
+  'Varias suites': 'Several suites',
   'Seleccionar todas las suites ({n} tests)': 'Select all suites ({n} tests)',
   'Resultados de búsqueda ({n})': 'Search results ({n})',
   'Escenarios en {suite} ({n})': 'Scenarios in {suite} ({n})',
