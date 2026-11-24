@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { cacheLife } from 'next/cache';
 import { getAdminClient } from '@/lib/supabase/admin';
 import RunSelector, { DiscoveredTest, SuiteItem } from '@/app/components/RunSelector';
 import RecentRuns from '@/app/components/RecentRuns';
@@ -44,6 +45,9 @@ async function discoverTestsFromGitHub(
   toolSlug: string,
   suites: SuiteItem[]
 ): Promise<DiscoveredTest[]> {
+  'use cache';
+  // Lo descubierto en GitHub casi no cambia: se guarda 5 min y las visitas no esperan a decenas de llamadas.
+  cacheLife({ stale: 300, revalidate: 300, expire: 3600 });
   if (!githubRepo) return [];
   const cleanRepo = normalizeRepo(githubRepo);
   if (!cleanRepo.includes('/')) return [];
