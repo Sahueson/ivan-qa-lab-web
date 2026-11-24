@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { cacheLife } from 'next/cache';
 import { getAdminClient } from '@/lib/supabase/admin';
+import { getTools } from '@/lib/tools';
 import RunSelector, { DiscoveredTest, SuiteItem } from '@/app/components/RunSelector';
 import RecentRuns from '@/app/components/RecentRuns';
 import { getT } from '@/lib/i18n-server';
@@ -254,8 +255,7 @@ async function ToolContent({ params }: { params: Promise<{ tool: string }> }) {
   const { tool } = await params;
   const db = getAdminClient();
 
-  const { data: tools } = await db.from('tools').select('*');
-  const allTools = tools || [];
+  const allTools = await getTools();
   const slugs = allTools.map((t) => t.slug);
 
   const isSelenium = tool.startsWith('selenium');

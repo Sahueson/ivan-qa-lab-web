@@ -10,14 +10,11 @@ export default async function RecentRuns({ toolIds, title }: { toolIds: string[]
   if (toolIds.length === 0) return null;
   const { t, locale } = await getT();
   const db = getAdminClient();
-  const { data: suites } = await db.from('suites').select('id').in('tool_id', toolIds);
-  const suiteIds = (suites ?? []).map((s) => s.id);
-  if (suiteIds.length === 0) return null;
-
+  // Una sola consulta: las ejecuciones de las suites de esas herramientas (inner join filtra por herramienta).
   const { data } = await db
     .from('runs')
-    .select('id, status, created_at, suites(slug, tools(name)), run_summary(total, passed, failed, duration_ms)')
-    .in('suite_id', suiteIds)
+    .select('id, status, created_at, suites!inner(slug, tool_id, tools(name)), run_summary(total, passed, failed, duration_ms)')
+    .in('suites.tool_id', toolIds)
     .order('created_at', { ascending: false })
     .limit(8);
   const runs = (data ?? []) as any[];
