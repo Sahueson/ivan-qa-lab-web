@@ -21,7 +21,7 @@ function buildRows(events: RunEvent[]) {
   const finishedNames = new Set<string>();
   for (const ev of events) {
     const text = ev.message ?? '';
-    if (ev.type === 'plan') { total = parseInt(text, 10) || 0; continue; }
+    if (ev.type === 'plan') { total += parseInt(text, 10) || 0; continue; } // suma: Cypress envía uno por spec
     if (ev.type === 'test_started') { started.set(text, new Date(ev.created_at).getTime()); running = ev; continue; }
     if (ev.type === 'test_passed' || ev.type === 'test_failed' || ev.type === 'test_skipped') {
       finishedNames.add(text);

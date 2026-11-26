@@ -3,7 +3,7 @@
 # Ivan QA Lab: contexto del proyecto
 
 ## Objetivo
-Web pública de portfolio (https://ivan-qa-lab.vercel.app, Vercel gratis) donde el visitante elige una
+Web pública de portfolio (https://ivan-qa-lab-web.vercel.app, Vercel gratis) donde el visitante elige una
 herramienta de automatización, elige sobre qué probar, lanza la ejecución, la ve en vivo y consulta
 resultados con métricas. Usuario de GitHub: Sahueson. Idioma de trabajo: español.
 
@@ -336,6 +336,19 @@ La web ya copia: cabecera con navegación en píldora, modo noche, botón negro 
 - Verificación visual: Claude in Chrome (extensión) funciona; el dev server (`next dev -p 3100`) debe reiniciarse si Tailwind
   deja de generar clases (síntoma: página negra sin estilos). Para probar errores sin lanzar un run real, sustituir
   `window.fetch` por un stub que devuelva 409 para POST /api/runs.
+
+## EJECUCIÓN EN VIVO (26-nov)
+La pantalla /runs/[id] (app/runs/[id]/page.tsx + lib/hooks/useLiveRun.ts) lee la tabla `run_events` (columnas type, message; NO event_type/test_name):
+carga inicial + Realtime + sondeo cada 3 s de respaldo, sin duplicados (por id). Tipos: `plan` (nº de tests; la web SUMA los plan, Cypress envía uno por spec),
+`test_started`, `test_passed`/`test_failed`/`test_skipped` (message = nombre del test; la duración sale de inicio→fin) y `log` (texto libre; los errores
+van como "   ↳ error"). Los eventos deben salir EN COLA (en paralelo se cruzan).
+- Emisor común: ivan-qa-lab-shared/live-events.js (emit/flush; sin RUN_ID no hace nada; LIVE_DEBUG=1 imprime en vez de enviar; nunca rompe ni frena el test).
+  with-staging.js emite las fases (reservando entorno, restaurando datos, listo) para TODAS las herramientas que lo usan.
+- Por test: Playwright (reporter), Cucumber (hooks.ts + live-formatter.cjs para el plan: los formatters se cargan con import() y no pasan por tsx, por eso .cjs),
+  Cypress (support/e2e.ts + task liveEvent), Selenium Python (conftest.py + qa/live.py), Selenium Java (LiveEvents + LiveListener por ServiceLoader + extensión),
+  Appium (wdio.conf.js: beforeTest/afterTest, plan contando los it()).
+- Solo fases (sin test a test): Newman, Bruno, Karate y JMeter. Ejecutan en <1 min y su resultado se convierte al final desde el informe de la herramienta.
+- Producción: https://ivan-qa-lab-web.vercel.app (el dominio ivan-qa-lab.vercel.app NO existe).
 
 ## API y rendimiento: Newman, Bruno, Karate, JMeter (HECHO 20-nov, ampliado por suites)
 - Repos qa-newman, qa-bruno, qa-karate (categoría `api`) y qa-jmeter (`performance`), en GitHub bajo Sahueson. Cada uno tiene las
