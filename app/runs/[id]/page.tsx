@@ -18,11 +18,13 @@ function buildRows(events: RunEvent[]) {
   const rows: Row[] = [];
   let total = 0;
   let running: RunEvent | null = null;
+  const finishedNames = new Set<string>();
   for (const ev of events) {
     const text = ev.message ?? '';
     if (ev.type === 'plan') { total = parseInt(text, 10) || 0; continue; }
     if (ev.type === 'test_started') { started.set(text, new Date(ev.created_at).getTime()); running = ev; continue; }
     if (ev.type === 'test_passed' || ev.type === 'test_failed' || ev.type === 'test_skipped') {
+      finishedNames.add(text);
       const t0 = started.get(text);
       const secs = t0 ? Math.max(0, (new Date(ev.created_at).getTime() - t0) / 1000) : undefined;
       const kind = ev.type === 'test_passed' ? 'passed' : ev.type === 'test_failed' ? 'failed' : 'skipped';
@@ -32,7 +34,7 @@ function buildRows(events: RunEvent[]) {
     }
     rows.push({ key: ev.id, kind: 'log', at: ev.created_at, text });
   }
-  if (running) rows.push({ key: running.id, kind: 'running', at: running.created_at, text: running.message ?? '' });
+  if (running && !finishedNames.has(running.message ?? '')) rows.push({ key: running.id, kind: 'running', at: running.created_at, text: running.message ?? '' });
   const count = (k: Row['kind']) => rows.filter((r) => r.kind === k).length;
   const passed = count('passed');
   const failed = count('failed');
