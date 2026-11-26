@@ -1,17 +1,59 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect, useMemo, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { useLiveRun } from '@/lib/hooks/useLiveRun';
+import { useLiveRun, type RunEvent } from '@/lib/hooks/useLiveRun';
 import { runStatusLabel } from '@/lib/labels';
 import { useT } from '@/app/components/I18nProvider';
+
+const DONE = ['finished', 'failed', 'timeout'];
+
+type Row = { key: number; kind: 'log' | 'passed' | 'failed' | 'skipped' | 'running'; at: string; text: string; secs?: number };
+
+// Convierte los eventos en filas: se ocultan los test_started que ya tienen resultado y, si hay un test
+// en marcha, se enseña como última fila. La duración sale de la diferencia entre inicio y fin.
+function buildRows(events: RunEvent[]) {
+  const started = new Map<string, number>();
+  const rows: Row[] = [];
+  let total = 0;
+  let running: RunEvent | null = null;
+  for (const ev of events) {
+    const text = ev.message ?? '';
+    if (ev.type === 'plan') { total = parseInt(text, 10) || 0; continue; }
+    if (ev.type === 'test_started') { started.set(text, new Date(ev.created_at).getTime()); running = ev; continue; }
+    if (ev.type === 'test_passed' || ev.type === 'test_failed' || ev.type === 'test_skipped') {
+      const t0 = started.get(text);
+      const secs = t0 ? Math.max(0, (new Date(ev.created_at).getTime() - t0) / 1000) : undefined;
+      const kind = ev.type === 'test_passed' ? 'passed' : ev.type === 'test_failed' ? 'failed' : 'skipped';
+      rows.push({ key: ev.id, kind, at: ev.created_at, text, secs });
+      if (running && running.message === text) running = null;
+      continue;
+    }
+    rows.push({ key: ev.id, kind: 'log', at: ev.created_at, text });
+  }
+  if (running) rows.push({ key: running.id, kind: 'running', at: running.created_at, text: running.message ?? '' });
+  const count = (k: Row['kind']) => rows.filter((r) => r.kind === k).length;
+  const passed = count('passed');
+  const failed = count('failed');
+  const skipped = count('skipped');
+  return { rows, total, passed, failed, skipped, done: passed + failed + skipped };
+}
 
 function LiveRunContent() {
   const t = useT();
   const params = useParams();
   const runId = params.id as string;
   const { status, events, position } = useLiveRun(runId);
+  const { rows, total, passed, failed, skipped, done } = useMemo(() => buildRows(events), [events]);
+  const consoleRef = useRef<HTMLDivElement>(null);
+  const finished = DONE.includes(status);
+
+  // Mantiene la consola pegada al último evento mientras llegan.
+  useEffect(() => {
+    const el = consoleRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [rows.length]);
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-8 py-6 space-y-6">
@@ -47,26 +89,57 @@ function LiveRunContent() {
           <span className="text-xs text-[var(--text-secondary)]">{t('{n} eventos', { n: events.length })}</span>
         </div>
 
-        <div className="rounded-2xl bg-[#111211] text-neutral-200 p-5 font-mono text-xs sm:text-sm min-h-[340px] max-h-[500px] overflow-y-auto space-y-2.5">
-          {events.length === 0 ? (
+        {total > 0 && (
+          <div className="mb-4">
+            <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] mb-1.5">
+              <span>{t('{done} de {total} tests', { done, total })}</span>
+              <span>
+                <span className="text-emerald-600 dark:text-emerald-400">✓ {passed}</span>
+                {' · '}
+                <span className={failed ? 'text-red-600 dark:text-red-400' : ''}>✗ {failed}</span>
+                {skipped > 0 && <> · ○ {skipped}</>}
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full bg-[var(--border-subtle)] overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${failed ? 'bg-red-500' : 'bg-emerald-500'}`}
+                style={{ width: `${Math.min(100, Math.round((done / total) * 100))}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        <div
+          ref={consoleRef}
+          className="rounded-2xl bg-[#111211] text-neutral-200 p-5 font-mono text-xs sm:text-sm min-h-[340px] max-h-[500px] overflow-y-auto space-y-2"
+        >
+          {rows.length === 0 ? (
             <p className="text-neutral-500 italic">
-              {status === 'finished' || status === 'failed' || status === 'timeout'
-                ? t('La ejecución ha terminado. Las herramientas publican su resultado completo al acabar, sin eventos intermedios: míralo en el informe.')
+              {finished
+                ? t('La ejecución ha terminado sin eventos registrados. Mira el informe.')
                 : status === 'waiting'
                   ? t('Esperando turno: el entorno de pruebas solo admite una ejecución a la vez.')
-                  : t('El runner de GitHub Actions está preparando y ejecutando las pruebas. El resultado aparece aquí al terminar.')}
+                  : t('El runner de GitHub Actions está arrancando el entorno. Los tests aparecerán aquí según se vayan ejecutando.')}
             </p>
           ) : (
-            events.map((ev, idx) => (
-              <div key={idx} className="flex gap-3 leading-relaxed">
-                <span className="text-neutral-500 shrink-0">
-                  {new Date(ev.created_at).toLocaleTimeString()}
-                </span>
-                <span className="text-emerald-400 font-semibold shrink-0">[{ev.event_type}]</span>
-                <span>
-                  {ev.test_name && <span className="text-sky-300 mr-2">{ev.test_name}</span>}
-                  {ev.message && <span className="text-neutral-300">{ev.message}</span>}
-                  {ev.error_message && <span className="text-red-400">{ev.error_message}</span>}
+            rows.map((r) => (
+              <div key={`${r.kind}-${r.key}`} className="flex gap-3 leading-relaxed">
+                <span className="text-neutral-500 shrink-0">{new Date(r.at).toLocaleTimeString()}</span>
+                {r.kind === 'passed' && <span className="text-emerald-400 font-semibold shrink-0">✓</span>}
+                {r.kind === 'failed' && <span className="text-red-400 font-semibold shrink-0">✗</span>}
+                {r.kind === 'skipped' && <span className="text-neutral-500 font-semibold shrink-0">○</span>}
+                {r.kind === 'running' && <span className="text-sky-300 font-semibold shrink-0 animate-pulse">▶</span>}
+                {r.kind === 'log' && <span className="text-neutral-500 shrink-0">·</span>}
+                <span
+                  className={
+                    r.kind === 'failed' ? 'text-red-300'
+                    : r.kind === 'running' ? 'text-sky-300'
+                    : r.kind === 'log' ? 'text-neutral-400'
+                    : 'text-neutral-200'
+                  }
+                >
+                  {r.text}
+                  {r.secs !== undefined && <span className="text-neutral-500"> ({r.secs.toFixed(1)} s)</span>}
                 </span>
               </div>
             ))
@@ -74,7 +147,7 @@ function LiveRunContent() {
         </div>
       </div>
 
-      {(status === 'finished' || status === 'failed' || status === 'timeout') && (
+      {finished && (
         <div className="flex justify-end">
           <Link
             href={`/runs/${runId}/results`}
