@@ -347,8 +347,10 @@ van como "   ↳ error"). Los eventos deben salir EN COLA (en paralelo se cruzan
 - Por test: Playwright (reporter), Cucumber (hooks.ts + live-formatter.cjs para el plan: los formatters se cargan con import() y no pasan por tsx, por eso .cjs),
   Cypress (support/e2e.ts + task liveEvent), Selenium Python (conftest.py + qa/live.py), Selenium Java (LiveEvents + LiveListener por ServiceLoader + extensión),
   Appium (wdio.conf.js: beforeTest/afterTest, plan contando los it()).
-- Solo fases (sin test a test): Newman, Bruno, Karate y JMeter. Ejecutan en <1 min y su resultado se convierte al final desde el informe de la herramienta.
-- Producción: https://ivan-qa-lab-web.vercel.app (el dominio ivan-qa-lab.vercel.app NO existe).
+- API y carga, SIN hook por test: ivan-qa-lab-shared/live-tail.js lanza el comando y convierte su consola en eventos (la salida se reenvía igual; los run.sh lo usan
+  si existe shared/live-tail.js; `TAIL` se define DENTRO de run() porque los arrays no sobreviven a `export -f`). Newman y Bruno: test a test (plan desde api-cases/spec.js;
+  el símbolo de cabecera de Newman cambia entre Windows y Linux). Karate: un `log` por suite (su consola no trae nombres de escenario). JMeter: un `log` de progreso
+  cada 3 s (-Jsummariser.interval=3: peticiones, req/s, media, errores); no usa with-staging, así que no emite las fases de reserva.
 
 ## API y rendimiento: Newman, Bruno, Karate, JMeter (HECHO 20-nov, ampliado por suites)
 - Repos qa-newman, qa-bruno, qa-karate (categoría `api`) y qa-jmeter (`performance`), en GitHub bajo Sahueson. Cada uno tiene las
