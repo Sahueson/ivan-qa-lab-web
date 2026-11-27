@@ -14,7 +14,7 @@ async function InformesPageContent() {
     .limit(30);
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-8 py-6 space-y-8">
+    <div className="max-w-5xl mx-auto px-4 sm:px-8 md:pr-24 xl:pr-8 py-6 space-y-8">
       <div>
         <h1 className="text-4xl font-semibold tracking-tight">{t('Informes')}</h1>
         <p className="text-sm text-[var(--text-secondary)] mt-1">

@@ -221,6 +221,7 @@ export const EN: Record<string, string> = {
   'Ninguna petición supera su umbral ni devuelve errores.': 'No request exceeds its threshold or returns errors.',
   '{n}: p95 de {a} ms frente a un umbral de {b} ms.': '{n}: p95 of {a} ms against a threshold of {b} ms.',
   '{n} peticiones con error en total.': '{n} requests with errors in total.',
+  'Los primeros segundos son más lentos (arranque y subida de usuarios).': 'The first seconds are slower (warm-up and ramp-up of users).',
   // ---- Contacto rápido ----
   'Contacto rápido': 'Quick contact',
   'Llamar': 'Call',

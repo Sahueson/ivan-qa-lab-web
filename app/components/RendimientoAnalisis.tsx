@@ -28,7 +28,10 @@ export default async function RendimientoAnalisis({ peticiones, numero }: { peti
   const mediaGlobal = totalN ? orden.reduce((a, [, b]) => a + b.sum, 0) / totalN : 0;
   const tpsMedia = tps.length ? tps.reduce((a, x) => a + x.value, 0) / tps.length : 0;
   const tpsMax = Math.max(...tps.map((x) => x.value), 0);
-  const picos = resp.filter((x) => x.value > mediaGlobal * 2 && x.value - mediaGlobal > 150);
+  // Los primeros tramos son calentamiento (arranque en frío, subida de usuarios): se comentan aparte y no cuentan como picos.
+  const calentamiento = Math.max(2, Math.ceil(resp.length * 0.15));
+  const hayCalentamiento = resp.slice(0, calentamiento).some((x) => x.value > mediaGlobal * 2);
+  const picos = resp.filter((x, i) => i >= calentamiento && x.value > mediaGlobal * 2 && x.value - mediaGlobal > 150);
   const errores = peticiones.reduce((a, p) => a + p.errores, 0);
   const fuera = peticiones.filter((p) => p.status === 'failed');
   const fmtMs = (v: number) => `${Math.round(v)} ms`;
@@ -70,6 +73,7 @@ export default async function RendimientoAnalisis({ peticiones, numero }: { peti
           <h3 className="text-sm font-semibold">{t('Tiempo de respuesta medio')}</h3>
           <AreaChart points={resp} ariaLabel={t('Tiempo de respuesta medio a lo largo de la prueba')} format={fmtMs} />
           <p className="text-sm">
+            {hayCalentamiento && `${t('Los primeros segundos son más lentos (arranque y subida de usuarios).')} `}
             {picos.length === 0
               ? t('El tiempo de respuesta se mantiene estable durante toda la prueba (media de {m} ms).', { m: Math.round(mediaGlobal) })
               : t('Media de {m} ms, con {n} pico(s) en los que el tiempo se más que duplica (hacia el segundo {s}). Conviene repetir la prueba para descartar que sea algo puntual.', { m: Math.round(mediaGlobal), n: picos.length, s: picos[0].label.replace('s', '') })}

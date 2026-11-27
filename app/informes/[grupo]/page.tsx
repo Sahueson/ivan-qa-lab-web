@@ -14,7 +14,7 @@ async function InformeGrupoPageContent({ params }: { params: Promise<{ grupo: st
   const data = await buildInforme(getAdminClient(), grupo as Grupo);
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-8 py-6 space-y-6">
+    <div className="max-w-5xl mx-auto px-4 sm:px-8 md:pr-24 xl:pr-8 py-6 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <Link href="/informes" className="text-sm text-[var(--text-secondary)] hover:underline">← {t('Informes')}</Link>
         <PrintButton />
