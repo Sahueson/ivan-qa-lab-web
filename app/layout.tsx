@@ -4,6 +4,7 @@ import './globals.css';
 import { ThemeProvider } from './components/ThemeProvider';
 import NavbarServer from './components/NavbarServer';
 import { I18nProvider } from './components/I18nProvider';
+import ContactWidget from './components/ContactWidget';
 import { getLocale } from '@/lib/i18n-server';
 
 export const metadata: Metadata = {
@@ -21,6 +22,7 @@ async function LocaleShell({ children }: { children: React.ReactNode }) {
         <NavbarServer />
       </Suspense>
       {children}
+      <ContactWidget />
     </I18nProvider>
   );
 }

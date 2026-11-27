@@ -152,6 +152,11 @@ export const EN: Record<string, string> = {
   'Evidencia': 'Evidence',
   'Ver petición y respuesta': 'View request and response',
   'Ver captura': 'View screenshot',
+  // ---- Contacto rápido ----
+  'Contacto rápido': 'Quick contact',
+  'Llamar': 'Call',
+  'Cerrar': 'Close',
+  '¿Hablamos?': 'Get in touch?',
   // ---- Informes ejecutivos ----
   'Informe ejecutivo': 'Executive report',
   'Generado el': 'Generated on',
