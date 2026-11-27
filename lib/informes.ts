@@ -20,6 +20,12 @@ export const GRUPOS: Record<Grupo, { titulo: string; herramientas: string[]; des
   },
 };
 
+export type SuiteLinea = { letter: string; slug: string; name: string; total: number; passed: number; failed: number; skipped: number; duration_ms: number };
+
+export type BugLinea = { id: number; title: string; severity: string; status: string; tool_slug: string | null; suite_slug: string | null; test_name: string | null };
+
+export type InformeAnterior = { generado: string; version: number; total: number; passed: number; failed: number; skipped: number };
+
 export type InformeTool = {
   slug: string;
   name: string;
@@ -31,6 +37,8 @@ export type InformeTool = {
   skipped: number;
   duration_ms: number;
   fallos: { suite: string; test: string; error: string }[];
+  /** Resultado por suite (A–I). Los informes guardados antes del rediseño no lo traen. */
+  suites?: SuiteLinea[];
   /** Fecha del resultado más reciente de esta herramienta (ISO). */
   actualizado?: string;
 };
@@ -40,6 +48,12 @@ export type InformeData = {
   generado: string;
   tools: InformeTool[];
   lentos: { test: string; ms: number }[];
+  /** Nº de versión del informe de este grupo (1, 2, 3…). */
+  version?: number;
+  /** Resultado del informe guardado anterior del mismo grupo, para compararlo. */
+  anterior?: InformeAnterior | null;
+  /** Bugs abiertos de las herramientas del grupo (mini Jira). */
+  bugs?: BugLinea[];
 };
 
 type RunRow = { id: string; suite_id: string; created_at: string };
@@ -48,7 +62,7 @@ type RunRow = { id: string; suite_id: string; created_at: string };
  * Informe de un grupo. Lee suite_results (el último resultado de cada herramienta × suite, que no se borra), así que
  * refleja las 9 suites aunque las runs antiguas ya no existan. Si esa tabla aún no existe o está vacía, usa las runs guardadas.
  */
-export async function buildInforme(db: SupabaseClient, grupo: Grupo): Promise<InformeData> {
+async function buildInformeBase(db: SupabaseClient, grupo: Grupo): Promise<InformeData> {
   const { data: tools } = await db.from("tools").select("id, slug, name").in("slug", GRUPOS[grupo].herramientas);
   const { data: rows, error } = await db.from("suite_results").select("*").in("tool_slug", GRUPOS[grupo].herramientas).neq("suite_letter", "J");
   if (error || !rows || rows.length === 0) return buildInformeFromRuns(db, grupo);
@@ -56,7 +70,8 @@ export async function buildInforme(db: SupabaseClient, grupo: Grupo): Promise<In
   const out: InformeTool[] = [];
   const lentos: { test: string; ms: number }[] = [];
   for (const tool of tools ?? []) {
-    const { data: suites } = await db.from("suites").select("slug").eq("tool_id", tool.id);
+    const { data: suites } = await db.from("suites").select("slug, name").eq("tool_id", tool.id);
+    const nombre = new Map((suites ?? []).map((x) => [x.slug as string, x.name as string]));
     const mine = rows.filter((r) => r.tool_slug === tool.slug);
     const entry: InformeTool = {
       slug: tool.slug, name: tool.name,
@@ -64,6 +79,9 @@ export async function buildInforme(db: SupabaseClient, grupo: Grupo): Promise<In
       suitesTotales: (suites ?? []).filter((x) => x.slug !== "j-demo-fallos").length,
       total: 0, passed: 0, failed: 0, skipped: 0, duration_ms: 0, fallos: [],
       actualizado: mine.map((r) => r.finished_at as string).sort().pop(),
+      suites: mine
+        .map((r) => ({ letter: String(r.suite_letter), slug: String(r.suite_slug ?? r.suite_letter), name: nombre.get(r.suite_slug) ?? String(r.suite_slug ?? r.suite_letter), total: r.total, passed: r.passed, failed: r.failed, skipped: r.skipped, duration_ms: r.duration_ms }))
+        .sort((a, b) => a.letter.localeCompare(b.letter)),
     };
     for (const r of mine) {
       entry.total += r.total; entry.passed += r.passed; entry.failed += r.failed; entry.skipped += r.skipped; entry.duration_ms += r.duration_ms;
@@ -117,4 +135,24 @@ async function buildInformeFromRuns(db: SupabaseClient, grupo: Grupo): Promise<I
   }
   lentos.sort((a, b) => b.ms - a.ms);
   return { grupo, generado: new Date().toISOString(), tools: out, lentos: lentos.slice(0, 5) };
+}
+
+/** Informe completo: resultados + versión, comparación con el informe guardado anterior y bugs abiertos. */
+export async function buildInforme(db: SupabaseClient, grupo: Grupo): Promise<InformeData> {
+  const data = await buildInformeBase(db, grupo);
+  try {
+    const { data: prev } = await db.from("informes").select("data, created_at").eq("grupo", grupo).order("created_at", { ascending: false }).limit(1);
+    const { count } = await db.from("informes").select("id", { count: "exact", head: true }).eq("grupo", grupo);
+    data.version = (count ?? 0) + 1;
+    const p = prev?.[0]?.data as InformeData | undefined;
+    if (p) {
+      const sum = (k: "total" | "passed" | "failed" | "skipped") => p.tools.reduce((a, x) => a + x[k], 0);
+      data.anterior = { generado: p.generado ?? prev![0].created_at, version: p.version ?? count ?? 1, total: sum("total"), passed: sum("passed"), failed: sum("failed"), skipped: sum("skipped") };
+    } else data.anterior = null;
+    const { data: bugs } = await db.from("bugs").select("id, title, severity, status, tool_slug, suite_slug, test_name").in("tool_slug", GRUPOS[grupo].herramientas).in("status", ["abierto", "en_progreso"]).order("id");
+    data.bugs = (bugs ?? []) as BugLinea[];
+  } catch {
+    // tablas auxiliares ausentes: el informe sigue valiendo sin comparación ni bugs
+  }
+  return data;
 }
