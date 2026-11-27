@@ -53,7 +53,7 @@ export default function ContactWidget() {
       {/* Escritorio: píldora vertical pegada al borde derecho */}
       <nav
         aria-label={t('Contacto rápido')}
-        className="hidden md:flex fixed right-4 top-1/2 -translate-y-1/2 z-40 flex-col gap-1.5 p-2 rounded-full bg-[var(--bg-hero)] text-[var(--text-hero)] border border-white/15"
+        className="hidden md:flex fixed right-4 top-1/2 -translate-y-1/2 z-40 flex-col gap-1.5 p-2 rounded-full bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] border border-[var(--border-subtle)]"
       >
         {items.map((i) => (
           <a
@@ -62,7 +62,7 @@ export default function ContactWidget() {
             {...external(i.href)}
             aria-label={i.label}
             title={i.label}
-            className="group relative flex h-11 w-11 items-center justify-center rounded-full hover:bg-white/15 focus-visible:bg-white/15 focus-visible:outline-none transition-colors"
+            className="group relative flex h-11 w-11 items-center justify-center rounded-full hover:opacity-60 focus-visible:opacity-60 focus-visible:outline-none transition-colors"
           >
             <Icon k={i.k} />
             <span className="pointer-events-none absolute right-full mr-3 whitespace-nowrap rounded-full bg-[var(--bg-surface)] text-[var(--text-primary)] border border-[var(--border-subtle)] px-3 py-1.5 text-xs font-semibold opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">
@@ -82,7 +82,7 @@ export default function ContactWidget() {
               {...external(i.href)}
               className="flex items-center gap-2.5 rounded-full bg-[var(--bg-surface)] text-[var(--text-primary)] border border-[var(--border-subtle)] py-2 pl-2 pr-4 text-sm font-semibold"
             >
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--bg-hero)] text-[var(--text-hero)]">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--pill-active-bg)] text-[var(--pill-active-text)]">
                 <Icon k={i.k} size={18} />
               </span>
               {i.label}
@@ -93,7 +93,7 @@ export default function ContactWidget() {
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
           aria-label={t('Contacto rápido')}
-          className="flex h-14 items-center gap-2.5 rounded-full bg-[var(--bg-hero)] text-[var(--text-hero)] border border-white/15 pl-5 pr-6 text-sm font-semibold"
+          className="flex h-14 items-center gap-2.5 rounded-full bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] border border-[var(--border-subtle)] pl-5 pr-6 text-sm font-semibold"
         >
           <Icon k="wa" />
           {open ? t('Cerrar') : t('¿Hablamos?')}
