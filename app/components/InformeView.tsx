@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { InformeData } from '@/lib/informes';
 import { GRUPOS } from '@/lib/informes';
 import { getT } from '@/lib/i18n-server';
+import RendimientoAnalisis from './RendimientoAnalisis';
 import { dateLocale } from '@/lib/i18n';
 
 const pct = (p: number, t: number) => (t > 0 ? Math.round((p / t) * 100) : 0);
@@ -194,7 +195,7 @@ export default async function InformeView({ data }: { data: InformeData }) {
           </>
         )}
 
-        {data.grupo === 'rendimiento' && data.lentos.length > 0 && (
+        {data.grupo === 'rendimiento' && data.lentos.length > 0 && !(data.peticiones && data.peticiones.length > 0) && (
           <>
             <h3 className="text-sm font-semibold pt-2">{t('Casos más lentos (p95)')}</h3>
             <ul className={`${card} divide-y divide-[var(--border-subtle)] text-sm`}>
@@ -206,9 +207,11 @@ export default async function InformeView({ data }: { data: InformeData }) {
         )}
       </section>
 
+      {data.grupo === 'rendimiento' && data.peticiones && data.peticiones.length > 0 && <RendimientoAnalisis peticiones={data.peticiones} numero="5" />}
+
       {/* 6. Incidencias */}
       <section className="space-y-3">
-        <h2 className="text-xl font-semibold">{data.grupo === 'rendimiento' ? '5' : '4'}. {t('Incidencias')}</h2>
+        <h2 className="text-xl font-semibold">{data.grupo === 'rendimiento' ? '6' : '4'}. {t('Incidencias')}</h2>
         {fallos.length === 0 ? (
           <p className={`text-sm ${muted}`}>{t('No hay casos fallados en los últimos resultados.')}</p>
         ) : (
@@ -249,7 +252,7 @@ export default async function InformeView({ data }: { data: InformeData }) {
 
       {/* 7. Conclusión */}
       <section className="space-y-3">
-        <h2 className="text-xl font-semibold">{data.grupo === 'rendimiento' ? '6' : '5'}. {t('Conclusión y recomendaciones')}</h2>
+        <h2 className="text-xl font-semibold">{data.grupo === 'rendimiento' ? '7' : '5'}. {t('Conclusión y recomendaciones')}</h2>
         <ul className="text-sm space-y-1">
           <li>{t('Total de casos')}: <b>{total}</b></li>
           <li>{t('Pasados')}: <b>{passed}</b> · {t('Fallados')}: <b>{failed}</b> · {t('Omitidos')}: <b>{skipped}</b></li>

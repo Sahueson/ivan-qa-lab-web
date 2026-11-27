@@ -24,6 +24,21 @@ export type SuiteLinea = { letter: string; slug: string; name: string; total: nu
 
 export type BugLinea = { id: number; title: string; severity: string; status: string; tool_slug: string | null; suite_slug: string | null; test_name: string | null };
 
+export type Peticion = {
+  test: string;
+  status: string;
+  peticiones: number;
+  errores: number;
+  min_ms: number;
+  media_ms: number;
+  p95_ms: number;
+  max_ms: number;
+  umbral_p95_ms: number;
+  tramo_s: number;
+  /** Por tramos de tramo_s segundos desde el inicio: peticiones, tiempo medio y máximo. */
+  serie: { s: number; n: number; avg_ms: number; max_ms: number }[];
+};
+
 export type InformeAnterior = { generado: string; version: number; total: number; passed: number; failed: number; skipped: number };
 
 export type InformeTool = {
@@ -52,6 +67,8 @@ export type InformeData = {
   version?: number;
   /** Resultado del informe guardado anterior del mismo grupo, para compararlo. */
   anterior?: InformeAnterior | null;
+  /** Solo rendimiento: medición de cada petición de la última ejecución de JMeter (con su serie temporal). */
+  peticiones?: Peticion[];
   /** Bugs abiertos de las herramientas del grupo (mini Jira). */
   bugs?: BugLinea[];
 };
@@ -151,8 +168,39 @@ export async function buildInforme(db: SupabaseClient, grupo: Grupo): Promise<In
     } else data.anterior = null;
     const { data: bugs } = await db.from("bugs").select("id, title, severity, status, tool_slug, suite_slug, test_name").in("tool_slug", GRUPOS[grupo].herramientas).in("status", ["abierto", "en_progreso"]).order("id");
     data.bugs = (bugs ?? []) as BugLinea[];
+    if (grupo === "rendimiento") data.peticiones = await cargarPeticiones(db);
   } catch {
     // tablas auxiliares ausentes: el informe sigue valiendo sin comparación ni bugs
   }
   return data;
+}
+
+/** Mediciones de JMeter: último resultado de cada petición entre las runs guardadas, leyendo el JSON de evidencia de cada una. */
+async function cargarPeticiones(db: SupabaseClient): Promise<Peticion[]> {
+  const { data: tool } = await db.from("tools").select("id").eq("slug", "jmeter").single();
+  if (!tool) return [];
+  const { data: suites } = await db.from("suites").select("id").eq("tool_id", tool.id);
+  const { data: runs } = await db.from("runs").select("id").in("suite_id", (suites ?? []).map((x) => x.id)).eq("status", "finished").order("created_at", { ascending: false }).limit(4);
+  const ids = (runs ?? []).map((r) => r.id as string);
+  if (ids.length === 0) return [];
+  const order = new Map(ids.map((id, i) => [id, i]));
+  const { data: rows } = await db.from("test_results").select("name, status, evidence_url, run_id").in("run_id", ids).not("evidence_url", "is", null);
+  const latest = new Map<string, { name: string; status: string; evidence_url: string; run_id: string }>();
+  for (const r of (rows ?? []) as { name: string; status: string; evidence_url: string; run_id: string }[]) {
+    const cur = latest.get(r.name);
+    if (!cur || (order.get(r.run_id) ?? 99) < (order.get(cur.run_id) ?? 99)) latest.set(r.name, r);
+  }
+  const out: Peticion[] = [];
+  await Promise.all([...latest.values()].map(async (r) => {
+    try {
+      const res = await fetch(r.evidence_url);
+      if (!res.ok) return;
+      const m = (await res.json())?.medicion;
+      if (!m || !Array.isArray(m.serie)) return;
+      out.push({ test: r.name, status: r.status, peticiones: m.peticiones, errores: m.errores, min_ms: m.min_ms, media_ms: m.media_ms, p95_ms: m.p95_ms, max_ms: m.max_ms, umbral_p95_ms: m.umbral_p95_ms, tramo_s: m.tramo_s ?? 2, serie: m.serie });
+    } catch {
+      // evidencia no disponible: esa petición se omite del análisis
+    }
+  }));
+  return out.sort((a, b) => a.test.localeCompare(b.test));
 }

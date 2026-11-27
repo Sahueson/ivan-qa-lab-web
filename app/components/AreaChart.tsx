@@ -8,7 +8,7 @@ const PAD = { top: 16, right: 16, bottom: 28, left: 52 };
 
 const fmt = (v: number) => (v >= 10 ? `${Math.round(v)}s` : `${v.toFixed(1)}s`);
 
-export default function AreaChart({ points, ariaLabel }: { points: Point[]; ariaLabel: string }) {
+export default function AreaChart({ points, ariaLabel, format = fmt }: { points: Point[]; ariaLabel: string; format?: (v: number) => string }) {
   if (points.length < 2) return null;
 
   const max = Math.max(...points.map((p) => p.value), 1);
@@ -49,7 +49,7 @@ export default function AreaChart({ points, ariaLabel }: { points: Point[]; aria
               strokeDasharray={t === 0 ? undefined : '3 4'}
             />
             <text x={PAD.left - 8} y={y + 3.5} textAnchor="end" fontSize="11" fill="var(--text-secondary)">
-              {fmt(t)}
+              {format(t)}
             </text>
           </g>
         );
